@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/models/app_user.dart';
 import '../../features/alerts/ui/alerts_screen.dart';
 import '../../features/auth/controllers/auth_providers.dart';
 import '../../features/auth/ui/sign_in_screen.dart';
@@ -20,7 +21,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     debugLogDiagnostics: false,
     refreshListenable: _AuthRefresh(ref),
     redirect: (context, state) {
-      final user = ref.read(currentUserProvider);
+      // Read authStateProvider directly, not the derived currentUserProvider.
+      // currentUserProvider is a non-disposing Provider that caches its
+      // computed value; when authStateProvider's stream emits a new value
+      // and `_AuthRefresh` synchronously re-triggers the redirect via
+      // notifyListeners, the cached currentUserProvider may not yet have
+      // recomputed, returning a stale user. authStateProvider's state is
+      // updated synchronously when the underlying stream emits, so reading
+      // it here is always current.
+      final user = ref.read(authStateProvider).valueOrNull;
       final loggedIn = user != null;
       final goingToAuth = state.matchedLocation.startsWith('/auth');
 
@@ -64,15 +73,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 /// Bridges Riverpod auth changes into go_router's refresh mechanism.
+///
+/// The generic on `ref.listen` MUST be the provider's exact value type
+/// (`AsyncValue<AppUser?>` here). A widened type like `AsyncValue<Object?>`
+/// type-checks but Riverpod silently never fires the listener at runtime —
+/// `notifyListeners` would never be called and `GoRouter` would never
+/// re-evaluate its redirect after sign-in / sign-out.
 class _AuthRefresh extends ChangeNotifier {
-  _AuthRefresh(this._ref) {
-    _sub = _ref.listen<AsyncValue<AppUserOrNull>>(
+  _AuthRefresh(Ref ref) {
+    _sub = ref.listen<AsyncValue<AppUser?>>(
       authStateProvider,
       (_, _) => notifyListeners(),
     );
   }
-  final Ref _ref;
-  late final ProviderSubscription<AsyncValue<AppUserOrNull>> _sub;
+
+  late final ProviderSubscription<AsyncValue<AppUser?>> _sub;
 
   @override
   void dispose() {
@@ -80,6 +95,3 @@ class _AuthRefresh extends ChangeNotifier {
     super.dispose();
   }
 }
-
-/// Alias used only by [_AuthRefresh] to keep the listen signature explicit.
-typedef AppUserOrNull = Object?;

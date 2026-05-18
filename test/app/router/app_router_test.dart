@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -20,6 +22,24 @@ void main() {
     ).thenAnswer((_) => Stream<AppUser?>.value(user));
     return ProviderContainer(
       overrides: [authRepositoryProvider.overrideWithValue(repo)],
+    );
+  }
+
+  /// Container that exposes a [controller] you can push values into to
+  /// simulate auth state transitions (sign-in / sign-out) mid-test.
+  ({ProviderContainer container, StreamController<AppUser?> controller})
+  makeLiveContainer({AppUser? initial}) {
+    final controller = StreamController<AppUser?>.broadcast();
+    when(() => repo.currentUser).thenReturn(initial);
+    when(() => repo.currentUserChanges()).thenAnswer((_) async* {
+      yield initial;
+      yield* controller.stream;
+    });
+    return (
+      container: ProviderContainer(
+        overrides: [authRepositoryProvider.overrideWithValue(repo)],
+      ),
+      controller: controller,
     );
   }
 
@@ -60,5 +80,34 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(router.routerDelegate.currentConfiguration.uri.path, '/home');
+  });
+
+  testWidgets('redirects /home -> /auth/sign-in when auth stream emits null '
+      '(sign-out regression)', (tester) async {
+    const user = AppUser(id: 'u1', email: 'a@b.co');
+    final live = makeLiveContainer(initial: user);
+    addTearDown(live.container.dispose);
+    addTearDown(live.controller.close);
+
+    final router = live.container.read(appRouterProvider);
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: live.container,
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(router.routerDelegate.currentConfiguration.uri.path, '/home');
+
+    // Update the mock so the redirect's ref.read sees the new state.
+    when(() => repo.currentUser).thenReturn(null);
+    // Simulate Supabase emitting the signed-out event.
+    live.controller.add(null);
+    await tester.pumpAndSettle();
+
+    expect(
+      router.routerDelegate.currentConfiguration.uri.path,
+      '/auth/sign-in',
+    );
   });
 }
