@@ -1,17 +1,27 @@
-# stayon
+# StayOn
 
-Never miss what matters.
+Never miss what matters. Track expiry, renewal, and due dates for warranties, subscriptions, IDs, insurance, medicines, groceries, bills, and documents.
 
-## Getting Started
+- **Platforms:** iOS 16+, Android 10+ (web target enabled for dev preview only)
+- **Stack:** Flutter 3.41 · Riverpod · Supabase · Drift · Nunito Sans
+- **Bundle ID:** `app.getstayon.mobile`
+- **Spec:** [docs/superpowers/specs/2026-05-18-stayon-mvp-design.md](docs/superpowers/specs/2026-05-18-stayon-mvp-design.md)
+- **Plan:** [docs/superpowers/plans/2026-05-18-stayon-mvp.md](docs/superpowers/plans/2026-05-18-stayon-mvp.md)
 
-This project is a starting point for a Flutter application.
+## Run locally
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter pub get
+flutter run                  # picks an available device
+flutter run -d chrome        # web preview
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Quality gates
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+dart format --set-exit-if-changed .
+flutter analyze --fatal-infos
+flutter test
+```
+
+CI runs all three on every push and pull request — see [`.github/workflows/ci.yml`](.github/workflows/ci.yml).
