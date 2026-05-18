@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.41.x'
+          channel: 'stable'
+          cache: true
+      - run: flutter pub get
+      - run: dart format --set-exit-if-changed .
+      - run: flutter analyze --fatal-infos
+      - run: flutter test --coverage
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          if-no-files-found: ignore
