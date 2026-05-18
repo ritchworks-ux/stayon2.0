@@ -106,7 +106,6 @@ coverage/
 *.ipa
 
 # ---------- Web ----------
-lib/generated_plugin_registrant.dart
 
 # ---------- macOS / Linux / Windows desktop builds ----------
 **/macos/Flutter/GeneratedPluginRegistrant.swift
