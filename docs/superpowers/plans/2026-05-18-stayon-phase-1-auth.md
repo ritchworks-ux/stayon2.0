@@ -82,7 +82,7 @@
 
 ```
 SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxx
 ```
 
 These values are referenced via `--dart-define-from-file=.env.local` in run/build commands.
@@ -104,7 +104,7 @@ These values are referenced via `--dart-define-from-file=.env.local` in run/buil
 /// Missing values throw at startup so we never run with a misconfigured backend.
 abstract final class Env {
   static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-  static const supabaseAnonKey = String.fromEnvironment('SUPABASE_ANON_KEY');
+  static const supabasePublishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
 
   /// Throws [StateError] if any required value is empty.
   static void assertValid() {
@@ -112,8 +112,8 @@ abstract final class Env {
       throw StateError('SUPABASE_URL is not set. '
           'Run with --dart-define-from-file=.env.local');
     }
-    if (supabaseAnonKey.isEmpty) {
-      throw StateError('SUPABASE_ANON_KEY is not set. '
+    if (supabasePublishableKey.isEmpty) {
+      throw StateError('SUPABASE_PUBLISHABLE_KEY is not set. '
           'Run with --dart-define-from-file=.env.local');
     }
   }
@@ -148,7 +148,7 @@ abstract final class SupabaseService {
     Env.assertValid();
     await Supabase.initialize(
       url: Env.supabaseUrl,
-      anonKey: Env.supabaseAnonKey,
+      anonKey: Env.supabasePublishableKey,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
       ),
@@ -1669,7 +1669,7 @@ The web target is the fastest way to verify the full auth loop without a simulat
 
 ```
 SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxx
 ```
 
 - [ ] **Step 2: Run on Chrome**
@@ -1713,7 +1713,7 @@ Copy your Supabase URL + anon key into `.env.local` (gitignored):
 
 ```
 SUPABASE_URL=https://xxxx.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOi...
+SUPABASE_PUBLISHABLE_KEY=sb_publishable_xxxxx
 ```
 
 ```bash
