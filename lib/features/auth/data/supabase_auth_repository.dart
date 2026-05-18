@@ -18,9 +18,24 @@ class SupabaseAuthRepository implements AuthRepository {
   @override
   Stream<AppUser?> currentUserChanges() async* {
     yield currentUser;
-    yield* _client.auth.onAuthStateChange.map(
-      (event) => _toAppUser(event.session?.user),
-    );
+    await for (final event in _client.auth.onAuthStateChange) {
+      final user = event.session?.user;
+      if (user != null && event.event == sb.AuthChangeEvent.signedIn) {
+        await _ensureProfile(user);
+      }
+      yield _toAppUser(user);
+    }
+  }
+
+  /// Idempotent upsert. RLS lets the user write only their own row.
+  Future<void> _ensureProfile(sb.User user) async {
+    await _client
+        .from('profiles')
+        .upsert(
+          {'id': user.id, 'display_name': user.userMetadata?['display_name']},
+          onConflict: 'id',
+          ignoreDuplicates: true,
+        );
   }
 
   @override
