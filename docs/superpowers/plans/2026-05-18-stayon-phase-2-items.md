@@ -4,7 +4,7 @@
 
 **Goal:** A signed-in user can add, edit, view, archive, soft-delete (with undo), and see their own items on a date-grouped Home dashboard. All data persisted in Supabase under RLS. No attachments / reminders / OCR — those are later phases.
 
-**Architecture:** UI → Riverpod controller → Repository (interface) → Supabase client. No local DB cache in this phase (see §J for the deliberate decision to defer Drift). Stream-based reactive list via Supabase's realtime channel for the current user's items. Forms validate locally; backend errors translate to user-friendly snackbars via a domain `ItemException` (mirrors the Phase 1 `AuthException` pattern).
+**Architecture:** UI → Riverpod controller → Repository (interface) → Supabase client. No local DB cache, no realtime subscriptions in this phase (see §2 for the deliberate decisions to defer Drift and Realtime). The Home list is a `FutureProvider` invalidated after each mutation (add / edit / archive / delete / restore) plus pull-to-refresh on the Home screen; this keeps the moving parts small and is trivial to swap to a stream later without touching the UI. Forms validate locally; backend errors translate to user-friendly snackbars via a domain `ItemException` (mirrors the Phase 1 `AuthException` pattern).
 
 **Tech Stack:** `supabase_flutter` ^2.12 · `flutter_riverpod` ^2.5 · `go_router` ^14 · `freezed` ^2.5 · `intl` ^0.19 · `mocktail` ^1 (no new dependencies — everything already pinned in Phase 0).
 
@@ -26,7 +26,8 @@
 - **Categories** — fixed 9 presets per spec §9 with color-coded chips: Warranty, Subscription, ID/License, Insurance, Medicine, Grocery, Bill, Document, Other
 - **Amount** — stored as `amount_minor` (int, centavos) + `currency_code` (default `'PHP'`); displayed as `₱1,234.50` via `intl.NumberFormat.currency`
 - **Ownership** — every item carries `owner_id = auth.uid()`; RLS forbids cross-user reads/writes
-- **Realtime updates** — Home list updates when another device of the same user adds/edits/deletes
+- **Refresh on mutation** — Home re-fetches after add / edit / archive / delete / restore via Riverpod `ref.invalidate(itemsProvider)`
+- **Pull-to-refresh** on Home — `RefreshIndicator` wraps the list; manual recovery if a write fails silently or after a network blip
 - **Wire FAB to Add Item** — replaces the "Add Item arrives in Phase 2" snackbar
 
 ### Out of scope (deferred — do not build in Phase 2)
@@ -42,6 +43,7 @@
 - Insights / spend analytics (V1.5; `amount_minor` is captured in this phase so it ships without migration)
 - Search (Phase 5)
 - Tagalog / non-English UI
+- **Realtime / multi-device sync** — Phase 2b (or whenever beta users actually have multiple devices; we want the simplest reliable path for solo-device beta)
 
 ---
 
@@ -52,10 +54,11 @@
 | Decision | Choice | Reason |
 |---|---|---|
 | Local cache (Drift) | **Defer to Phase 2b** | Supabase free tier + a typical user with <200 items keeps the dashboard query under ~200 ms; the complexity of a sync engine (schema versioning, conflict resolution, web sqlite3 WASM) is not justified for beta. We add Drift only if beta users report offline pain. |
-| Realtime updates | Supabase realtime channel filtered to `owner_id = auth.uid()` | Free on the Supabase Free tier; one channel; minor bandwidth; needed for "edit on device A, see on device B" UX once Phase 1b unlocks multi-device sign-in. |
+| Realtime updates | **Defer to Phase 2b** | Simplest reliable beta path. Single-device users don't need it. Adds testing surface and free-tier connection quota usage. The repository surface is shaped so a `watchActive()` stream method can be added next to `fetchActive()` later without rewriting controllers — only the providers swap from `FutureProvider` to `StreamProvider`. |
 | Form validation | Reuse Phase 1 `Form` + `TextFormField.validator` pattern | No new dep; consistent UX with auth forms. |
 | Error model | Domain `ItemException(code, message)` thrown by repository | Mirrors `AuthException`; UI translates to snackbars. |
-| State shape | Per-screen Riverpod controllers + a single `itemsStreamProvider` for the Home list | Matches Phase 1 layering; no global app state. |
+| State shape | Per-screen Riverpod controllers + a single `itemsProvider` (FutureProvider) for the Home list, invalidated after each mutation | Matches Phase 1 layering; no global app state; invalidate-on-write is the cheapest correct refresh strategy. |
+| Refresh strategy | `ref.invalidate(itemsProvider)` after every mutation + `RefreshIndicator` on Home | Two recovery paths: automatic on writes, manual on demand. |
 
 ### Folder layout (additions only)
 
@@ -74,7 +77,7 @@ lib/
         item_repository.dart           # interface + ItemException
         supabase_item_repository.dart  # impl
       controllers/
-        item_providers.dart            # itemRepositoryProvider, itemsStreamProvider
+        item_providers.dart            # itemRepositoryProvider, itemsProvider (FutureProvider), itemByIdProvider
         item_form_controller.dart      # AsyncNotifier for add/update
         item_actions_controller.dart   # AsyncNotifier for archive/delete/restore
       ui/
@@ -335,7 +338,7 @@ TDD-first where logic exists. Each task that introduces logic writes the failing
 - `add` surfaces RLS denial as `ItemException(code='rls', ...)`
 - `update(id, patch)` calls the right method, updates `updated_at` implicitly
 - `archive(id)` sets `status='archived'`; `trash(id)` sets `status='trashed'` + `trashed_at`; `restore(id)` clears them
-- `watchActive()` filters out non-active statuses
+- `fetchActive()` returns only `status='active'` rows, sorted by `target_date` ascending
 
 ### Integration / runtime
 - Playwright smoke after each UI task (web-server + navigate + snapshot + console-clean)
@@ -695,9 +698,11 @@ import '../../../core/models/item_category.dart';
 import '../../../core/models/item_date_type.dart';
 
 abstract interface class ItemRepository {
-  /// Emits the current user's active items (sorted by target_date asc).
-  /// Re-emits on insert/update/delete from any source.
-  Stream<List<Item>> watchActive();
+  /// Fetches the current user's active items (sorted by target_date asc).
+  /// Callers refresh by re-invoking; the items provider invalidates this
+  /// after every mutation. (Phase 2b will add a `watchActive()` stream
+  /// next to this method without breaking callers.)
+  Future<List<Item>> fetchActive();
 
   /// Throws [ItemException] on failure.
   Future<Item> add({
@@ -756,7 +761,7 @@ This task's tests use a fake `SupabaseClient` via mocktail mocking `_client.from
 - `archive` calls update with `{status: 'archived'}`
 - `trash` calls update with `{status: 'trashed', trashed_at: <now>}`
 - `restore` calls update with `{status: 'active', trashed_at: null}`
-- `watchActive()` filters out `archived` and `trashed` rows even if Supabase realtime emits them
+- `fetchActive()` queries with `.eq('status', 'active')` and returns rows ordered by `target_date` ascending
 
 Implementation outline:
 
@@ -776,16 +781,14 @@ class SupabaseItemRepository implements ItemRepository {
   }
 
   @override
-  Stream<List<Item>> watchActive() {
-    return _client
+  Future<List<Item>> fetchActive() async {
+    final rows = await _client
         .from('items')
-        .stream(primaryKey: ['id'])
+        .select()
         .eq('owner_id', _uid)
-        .order('target_date')
-        .map((rows) => rows
-            .where((r) => r['status'] == 'active')
-            .map(Item.fromJson)
-            .toList());
+        .eq('status', 'active')
+        .order('target_date');
+    return rows.map((r) => Item.fromJson(r)).toList();
   }
 
   @override
@@ -855,8 +858,11 @@ final itemRepositoryProvider = Provider<ItemRepository>(
   (ref) => SupabaseItemRepository(),
 );
 
-final itemsStreamProvider = StreamProvider<List<Item>>(
-  (ref) => ref.watch(itemRepositoryProvider).watchActive(),
+/// Fetches the current user's active items.
+/// Invalidate via `ref.invalidate(itemsProvider)` after any mutation
+/// (the form controller and actions controller do this for you).
+final itemsProvider = FutureProvider<List<Item>>(
+  (ref) => ref.watch(itemRepositoryProvider).fetchActive(),
 );
 
 final itemByIdProvider =
@@ -864,7 +870,7 @@ final itemByIdProvider =
   return ref.watch(itemRepositoryProvider).getById(id);
 });
 ```
-- [ ] Step 2: Write `item_form_controller.dart` — `AsyncNotifier<void>` with `submitNew(...)` and `submitEdit(itemId, ...)`. Pattern identical to Phase 1's `AuthController`.
+- [ ] Step 2: Write `item_form_controller.dart` — `AsyncNotifier<void>` with `submitNew(...)` and `submitEdit(itemId, ...)`. Pattern identical to Phase 1's `AuthController`. **After a successful submit, the controller calls `ref.invalidate(itemsProvider)`** so Home re-fetches on next watch. The same pattern applies in `ItemActionsController` (archive / trash / restore) — every successful mutation invalidates `itemsProvider`.
 - [ ] Step 3: Analyze + commit
 ```bash
 git add lib/features/items/controllers/
@@ -929,15 +935,16 @@ git add lib/features/items/ui/widgets/item_card.dart \
 git commit -m "feat(items): ItemCard widget"
 ```
 
-#### Task 13: Home dashboard with real items + sections
+#### Task 13: Home dashboard with real items + sections + pull-to-refresh
 
 **Files:** Modify `lib/features/home/ui/home_screen.dart`; new `lib/features/items/ui/widgets/item_card_section.dart`; new `lib/features/items/ui/widgets/empty_home_state.dart`.
 
-- [ ] Step 1: Widget test — given `itemsStreamProvider` overridden with 4 items spanning all buckets, expect 4 section headers + 4 cards rendered
+- [ ] Step 1: Widget test — given `itemsProvider` overridden with 4 items spanning all buckets, expect 4 section headers + 4 cards rendered
 - [ ] Step 2: Widget test — empty list shows `EmptyHomeState`
-- [ ] Step 3: Widget test — loading state shows skeleton; error state shows retry
-- [ ] Step 4: Implement: replace existing empty card with `Consumer` of `itemsStreamProvider`, group via `bucketize`, render each non-empty bucket as `ItemCardSection`
-- [ ] Step 5: Commit
+- [ ] Step 3: Widget test — loading state shows skeleton; error state shows retry button that re-invokes the provider
+- [ ] Step 4: Widget test — pull-to-refresh triggers `ref.invalidate(itemsProvider)` (verify the fetch is re-issued)
+- [ ] Step 5: Implement: replace existing empty card with `Consumer` of `itemsProvider`, group via `bucketize`, wrap the scroll view in `RefreshIndicator` whose `onRefresh` does `await ref.refresh(itemsProvider.future)`, render each non-empty bucket as `ItemCardSection`
+- [ ] Step 6: Commit
 ```bash
 git add lib/features/home/ lib/features/items/ui/widgets/item_card_section.dart \
         lib/features/items/ui/widgets/empty_home_state.dart \
@@ -1057,7 +1064,8 @@ Tag `v0.3-items` ships when ALL of the following are true:
   - [ ] Delete one → snackbar with Restore → tap Restore → item reappears
   - [ ] Delete one and let snackbar dismiss → item disappears from Home permanently (still in DB, viewable in Supabase Table Editor as `status='trashed'`)
   - [ ] Sign out → sign back in → all surviving items reappear (persistence proof)
-  - [ ] Open a second browser, sign in same account → both browsers see realtime updates within ~1 s
+  - [ ] After every add / edit / archive / delete / restore, Home reflects the change without a manual refresh
+  - [ ] Pull down on Home → spinner appears → list re-fetches and re-renders
 - [ ] Supabase Table Editor confirms: `items` rows owned only by your `auth.uid()`; no cross-user data
 - [ ] `flutter build web --dart-define-from-file=.env.local` clean
 - [ ] Console clean during Playwright runtime check (allow only the dev-tooling `dwds removeChild` cosmetic error)
@@ -1068,28 +1076,30 @@ Tag `v0.3-items` ships when ALL of the following are true:
 ## 9. Cost & complexity check
 
 ### What's free in Phase 2
-- Supabase free tier: every Phase 2 feature fits comfortably (DB ≪ 500 MB, realtime: 2 concurrent connections per user maxed out, well under the 200 concurrent limit)
+- Supabase free tier: every Phase 2 feature fits comfortably (DB ≪ 500 MB, no realtime usage, REST-only traffic well under 5 GB/mo egress)
 - No new dependencies added — everything was pinned in Phase 0
 - No new third-party services
 - No paid AI calls
 - CI: GitHub Actions free minutes; one job per push
 
 ### Potential cost growth
-- **Supabase realtime** counts toward concurrent-connection quota (200/project on Free). At 1 device per user, we can support ~200 simultaneously-open apps; far above beta. Upgrade trigger: paid Pro at $25/mo at ~2k–5k DAUs.
 - **Database storage** grows linearly: a typical Item row is ~300 B + small text fields; 10k items / user × 100 users = 1k items/user × 100 = still < 50 MB. Free tier covers ~1.5M items.
-- **Egress**: realtime + REST traffic. Free tier = 5 GB/mo. Each item read is ~1 KB; 100 active users with 50 reads/session × 30 sessions/mo × 100 users = 150k reads = 150 MB. Well under.
+- **Egress**: REST traffic. Free tier = 5 GB/mo. Each item read is ~1 KB; 100 active users with 50 reads/session × 30 sessions/mo × 100 users = 150k reads = 150 MB. Well under.
+- **Realtime quota** untouched in Phase 2; preserves headroom for Phase 2b when multi-device matters.
 
 ### Complexity added
-- **Realtime subscription** is one new failure mode (network blip → stream pauses; Supabase auto-reconnects, but UI must handle the gap gracefully via the `AsyncValue.loading` state — already covered by Riverpod's `StreamProvider`)
-- **Soft-delete state** means querying `status='active'` everywhere, easy to forget. Mitigated by routing all reads through `watchActive()` in the repository — UI never queries directly
-- **No Drift** means: app does not function offline. This is an explicit trade-off; offline-first becomes its own Phase 2b after beta feedback
+- **Invalidate-after-write contract** — every mutation path (form submit, archive, trash, restore) must call `ref.invalidate(itemsProvider)` on success. Mitigated by routing all writes through controllers that own this responsibility; UI never calls the repository directly.
+- **Soft-delete state** means querying `status='active'` everywhere, easy to forget. Mitigated by `fetchActive()` filtering at the repository — UI never queries directly.
+- **No Drift** means: app does not function offline. Explicit trade-off; offline-first becomes its own Phase 2b after beta feedback.
+- **No Realtime** means: changes on device A don't auto-appear on device B; user pulls to refresh or relaunches. Acceptable for single-device beta; lifted in Phase 2b.
 
 ### Risks to monitor
 
 | Risk | Mitigation |
 |---|---|
 | User adds item then immediately signs out before insert returns | Repository `add()` returns the inserted row; we navigate back to Home only on success. Optimistic UI explicitly NOT used in V1. |
-| Supabase realtime channel drops silently | `StreamProvider` exposes the error in `AsyncValue.error`; Home shows "Couldn't load — Retry"; tap retries by invalidating the provider. |
+| User mutation succeeds but `ref.invalidate` is forgotten | Caught by widget tests for each controller: assert that `itemsProvider` is re-evaluated after a successful submit / archive / trash / restore. |
+| Home shows stale data after a network blip during fetch | Pull-to-refresh on Home + Retry button in the error state. |
 | User edits item on device A while device B is offline; conflict on reconnect | Phase 2 doesn't support offline writes (only reads have client-cache during session). Last-write-wins is fine for V1. Phase 2b's Drift will introduce explicit conflict handling. |
 | Migration applied in wrong order (0003 RLS before 0002 table) | Migrations are number-ordered; Task M1 explicitly precedes M2 in the plan. |
 
