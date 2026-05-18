@@ -14,9 +14,7 @@ abstract final class AppTheme {
       onSurface: AppColors.ink,
     );
 
-    return _base(scheme).copyWith(
-      scaffoldBackgroundColor: AppColors.cream,
-    );
+    return _base(scheme).copyWith(scaffoldBackgroundColor: AppColors.cream);
   }
 
   static ThemeData dark() {
@@ -29,9 +27,7 @@ abstract final class AppTheme {
       onSurface: Colors.white,
     );
 
-    return _base(scheme).copyWith(
-      scaffoldBackgroundColor: AppColors.darkBg,
-    );
+    return _base(scheme).copyWith(scaffoldBackgroundColor: AppColors.darkBg);
   }
 
   static ThemeData _base(ColorScheme scheme) {
@@ -41,7 +37,9 @@ abstract final class AppTheme {
       fontFamily: 'NunitoSans',
       textTheme: TextTheme(
         displayLarge: AppTypography.displayLg.copyWith(color: scheme.onSurface),
-        displayMedium: AppTypography.displayMd.copyWith(color: scheme.onSurface),
+        displayMedium: AppTypography.displayMd.copyWith(
+          color: scheme.onSurface,
+        ),
         titleLarge: AppTypography.titleLg.copyWith(color: scheme.onSurface),
         titleMedium: AppTypography.titleMd.copyWith(color: scheme.onSurface),
         bodyLarge: AppTypography.bodyLg.copyWith(color: scheme.onSurface),
@@ -52,9 +50,7 @@ abstract final class AppTheme {
       cardTheme: CardThemeData(
         elevation: 0,
         color: scheme.surface,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         margin: EdgeInsets.zero,
       ),
       filledButtonTheme: FilledButtonThemeData(
