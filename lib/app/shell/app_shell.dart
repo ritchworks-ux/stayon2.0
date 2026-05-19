@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../theme/colors.dart';
+import '../../features/items/ui/item_form_sheet.dart';
+
 class AppShell extends StatelessWidget {
   const AppShell({super.key, required this.navigationShell});
   final StatefulNavigationShell navigationShell;
@@ -28,6 +31,16 @@ class AppShell extends StatelessWidget {
     ),
   ];
 
+  Future<void> _openAddSheet(BuildContext context) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const ItemFormSheet(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,9 +54,9 @@ class AppShell extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Add Item arrives in Phase 2')),
-        ),
+        backgroundColor: AppColors.green,
+        foregroundColor: Colors.white,
+        onPressed: () => _openAddSheet(context),
         tooltip: 'Add item',
         child: const Icon(Icons.add),
       ),
