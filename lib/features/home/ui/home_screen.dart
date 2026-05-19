@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/colors.dart';
 import '../../auth/controllers/auth_controller.dart';
@@ -72,16 +73,8 @@ class HomeScreen extends ConsumerWidget {
                           ItemCardSection(
                             bucket: bucket,
                             items: buckets[bucket] ?? const [],
-                            onTapItem: (item) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                    'Tapped "${item.name}". '
-                                    'Item Detail arrives in Phase 2 Task 15.',
-                                  ),
-                                ),
-                              );
-                            },
+                            onTapItem: (item) =>
+                                context.push('/item/${item.id}'),
                           ),
                       ]),
                     ),

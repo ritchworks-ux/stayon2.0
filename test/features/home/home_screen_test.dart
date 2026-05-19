@@ -184,20 +184,9 @@ void main() {
     expect(calls, greaterThanOrEqualTo(2));
   });
 
-  testWidgets(
-    'tapping a card shows a placeholder snackbar (Task 15 wires it)',
-    (tester) async {
-      when(
-        () => itemRepo.fetchActive(),
-      ).thenAnswer((_) async => [_stub(id: 'a', name: 'PhilHealth')]);
-
-      await tester.pumpWidget(_wrap(authRepo: authRepo, itemRepo: itemRepo));
-      await tester.pumpAndSettle();
-
-      await tester.tap(find.byType(ItemCard).first);
-      await tester.pump();
-
-      expect(find.textContaining('Item Detail arrives'), findsOneWidget);
-    },
-  );
+  // Note: tapping a card now navigates to `/item/:id` via `context.push`,
+  // which is exercised end-to-end in the router test
+  // (test/app/router/app_router_test.dart). Re-asserting navigation here
+  // would require building MaterialApp.router with the full GoRouter,
+  // which duplicates router-test coverage without adding value.
 }

@@ -82,6 +82,28 @@ void main() {
     expect(router.routerDelegate.currentConfiguration.uri.path, '/home');
   });
 
+  testWidgets(
+    'unauthenticated user navigating to /item/:id is redirected to sign-in',
+    (tester) async {
+      final c = makeContainer(user: null);
+      addTearDown(c.dispose);
+
+      final router = c.read(appRouterProvider);
+      router.go('/item/abc-123');
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: c,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        router.routerDelegate.currentConfiguration.uri.path,
+        '/auth/sign-in',
+      );
+    },
+  );
+
   testWidgets('redirects /home -> /auth/sign-in when auth stream emits null '
       '(sign-out regression)', (tester) async {
     const user = AppUser(id: 'u1', email: 'a@b.co');
