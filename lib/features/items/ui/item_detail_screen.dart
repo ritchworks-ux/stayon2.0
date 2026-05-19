@@ -118,32 +118,36 @@ class _DetailBody extends ConsumerWidget {
   }
 
   Future<void> _archive(BuildContext context, WidgetRef ref) async {
+    // Capture EVERYTHING that touches the widget tree BEFORE any await
+    // or navigation. After `router.go('/home')` the detail screen is
+    // disposed and `ref` becomes defunct — closures that try to use
+    // `ref.read(...)` from inside the SnackBarAction would silently
+    // throw and the Undo button would do nothing.
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
+    final actions = ref.read(itemActionsControllerProvider.notifier);
+    final id = item.id;
+
     final ok = await _confirm(
       context,
       title: 'Archive item?',
-      message:
-          'Archiving hides it from Home. You can restore it later from '
-          'the Trash / Archive screen (Phase 6).',
+      message: 'Archived items are hidden from Home.',
       confirmLabel: 'Archive',
     );
     if (!ok) return;
-    final updated = await ref
-        .read(itemActionsControllerProvider.notifier)
-        .archive(item.id);
+
+    final updated = await actions.archive(id);
     if (updated == null) {
-      _showError(messenger, ref, 'archive');
+      _showError(messenger, actions, 'archive');
       return;
     }
     messenger.showSnackBar(
       SnackBar(
-        content: const Text('Item archived'),
+        content: const Text('Item archived.'),
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: 'Undo',
-          onPressed: () =>
-              ref.read(itemActionsControllerProvider.notifier).restore(item.id),
+          onPressed: () => actions.restore(id),
         ),
       ),
     );
@@ -153,44 +157,53 @@ class _DetailBody extends ConsumerWidget {
   Future<void> _trash(BuildContext context, WidgetRef ref) async {
     final messenger = ScaffoldMessenger.of(context);
     final router = GoRouter.of(context);
+    final actions = ref.read(itemActionsControllerProvider.notifier);
+    final id = item.id;
+
     final ok = await _confirm(
       context,
       title: 'Delete item?',
-      message:
-          'It will move to Trash. Use Undo within 5 seconds to bring '
-          'it back.',
+      message: 'This moves the item to Trash. You can restore it right away.',
       confirmLabel: 'Delete',
       destructive: true,
     );
     if (!ok) return;
-    final updated = await ref
-        .read(itemActionsControllerProvider.notifier)
-        .trash(item.id);
+
+    final updated = await actions.trash(id);
     if (updated == null) {
-      _showError(messenger, ref, 'delete');
+      _showError(messenger, actions, 'delete');
       return;
     }
     messenger.showSnackBar(
       SnackBar(
-        content: const Text('Item moved to Trash'),
+        content: const Text('Item moved to Trash.'),
         duration: const Duration(seconds: 5),
         action: SnackBarAction(
           label: 'Restore',
-          onPressed: () =>
-              ref.read(itemActionsControllerProvider.notifier).restore(item.id),
+          onPressed: () => actions.restore(id),
         ),
       ),
     );
     router.go('/home');
   }
 
+  String _statusLabel(ItemStatus s) {
+    switch (s) {
+      case ItemStatus.active:
+        return 'Active';
+      case ItemStatus.archived:
+        return 'Archived';
+      case ItemStatus.trashed:
+        return 'In Trash';
+    }
+  }
+
   void _showError(
     ScaffoldMessengerState messenger,
-    WidgetRef ref,
+    ItemActionsController actions,
     String verb,
   ) {
-    final err = ref.read(itemActionsControllerProvider).error;
-    final msg = err is ItemException ? err.message : "Couldn't $verb this item";
+    final msg = actions.lastError?.message ?? "Couldn't $verb this item";
     messenger.showSnackBar(SnackBar(content: Text(msg)));
   }
 
@@ -266,7 +279,7 @@ class _DetailBody extends ConsumerWidget {
               ),
             _Field(
               label: 'Status',
-              value: item.status.dbValue,
+              value: _statusLabel(item.status),
               icon: Icons.flag_outlined,
             ),
             const SizedBox(height: 24),
@@ -306,16 +319,19 @@ class _DetailBody extends ConsumerWidget {
                 onPressed: loading
                     ? null
                     : () async {
+                        // Capture pre-await for consistency with _archive
+                        // / _trash even though we don't navigate here.
                         final messenger = ScaffoldMessenger.of(context);
-                        final updated = await ref
-                            .read(itemActionsControllerProvider.notifier)
-                            .restore(item.id);
+                        final actions = ref.read(
+                          itemActionsControllerProvider.notifier,
+                        );
+                        final updated = await actions.restore(item.id);
                         if (updated == null) {
-                          _showError(messenger, ref, 'restore');
+                          _showError(messenger, actions, 'restore');
                           return;
                         }
                         messenger.showSnackBar(
-                          const SnackBar(content: Text('Item restored')),
+                          const SnackBar(content: Text('Item restored.')),
                         );
                       },
                 icon: const Icon(Icons.restore),

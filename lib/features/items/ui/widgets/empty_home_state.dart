@@ -38,8 +38,7 @@ class EmptyHomeState extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Tap the + button to add your first item.\n'
-            'Reminders and attachments arrive in later phases.',
+            'Tap the + button to add your first item.',
             style: t.bodyMedium,
             textAlign: TextAlign.center,
           ),

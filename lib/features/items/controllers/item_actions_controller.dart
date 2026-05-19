@@ -17,12 +17,18 @@ final itemActionsControllerProvider =
     );
 
 class ItemActionsController extends AsyncNotifier<void> {
+  /// Exposed so detail-screen helpers can format a friendly error
+  /// message after a failed action without reading the protected
+  /// `state` field. Set inside [_run] on every operation attempt.
+  ItemException? lastError;
+
   @override
   Future<void> build() async {}
 
   ItemRepository get _repo => ref.read(itemRepositoryProvider);
 
   Future<Item?> _run(Future<Item> Function() op, String id) async {
+    lastError = null;
     state = const AsyncValue.loading();
     Item? result;
     state = await AsyncValue.guard(() async {
@@ -30,7 +36,12 @@ class ItemActionsController extends AsyncNotifier<void> {
       ref.invalidate(itemsProvider);
       ref.invalidate(itemByIdProvider(id));
     });
-    return state.hasError ? null : result;
+    if (state.hasError) {
+      final err = state.error;
+      if (err is ItemException) lastError = err;
+      return null;
+    }
+    return result;
   }
 
   /// Archive (status -> archived). Returns the updated item on success,

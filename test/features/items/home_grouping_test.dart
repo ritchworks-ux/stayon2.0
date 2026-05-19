@@ -57,10 +57,22 @@ void main() {
         'Due in 6 days',
       );
     });
-    test('14 -> Due in ~2 weeks', () {
+    test('7 -> Due in 1 week (singular regression)', () {
+      expect(
+        relativeDateLabel(now.add(const Duration(days: 7)), now: now),
+        'Due in 1 week',
+      );
+    });
+    test('10 -> Due in 1 week (rounded, singular)', () {
+      expect(
+        relativeDateLabel(now.add(const Duration(days: 10)), now: now),
+        'Due in 1 week',
+      );
+    });
+    test('14 -> Due in 2 weeks', () {
       expect(
         relativeDateLabel(now.add(const Duration(days: 14)), now: now),
-        'Due in ~2 weeks',
+        'Due in 2 weeks',
       );
     });
     test('45 -> Due in 2 months (rounded)', () {

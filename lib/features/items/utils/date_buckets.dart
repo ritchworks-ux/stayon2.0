@@ -45,13 +45,13 @@ Map<DateBucket, List<Item>> bucketize(List<Item> items, {DateTime? now}) {
 
 /// Human-friendly "Due in N days" / "Overdue by N days" string.
 ///
-/// Branches:
-///   delta < 0       -> "Overdue by N day(s)" (singular for 1)
+/// Branches (all with singular/plural agreement):
+///   delta < 0       -> "Overdue by N day(s)"
 ///   delta == 0      -> "Due today"
 ///   delta == 1      -> "Due tomorrow"
 ///   2..6            -> "Due in N days"
-///   7..30           -> "Due in ~N weeks" (rounded)
-///   31..364         -> "Due in N month(s)" (singular for 1)
+///   7..30           -> "Due in N week(s)" (rounded)
+///   31..364         -> "Due in N month(s)" (rounded)
 ///   >= 365          -> "Due in over a year"
 String relativeDateLabel(DateTime target, {DateTime? now}) {
   final delta = _daysBetween(target, now ?? DateTime.now());
@@ -64,7 +64,7 @@ String relativeDateLabel(DateTime target, {DateTime? now}) {
   if (delta <= 6) return 'Due in $delta days';
   if (delta <= 30) {
     final weeks = (delta / 7).round();
-    return 'Due in ~$weeks weeks';
+    return 'Due in $weeks week${weeks == 1 ? '' : 's'}';
   }
   if (delta < 365) {
     final months = (delta / 30).round();
