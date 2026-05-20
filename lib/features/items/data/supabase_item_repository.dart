@@ -147,12 +147,13 @@ class SupabaseItemRepository implements ItemRepository {
     return ItemException(e.code ?? fallback, e.message);
   }
 
-  /// Render `DateTime` as `YYYY-MM-DD` for Postgres `date` columns,
-  /// in UTC to match the model's date semantics.
-  String _dateOnly(DateTime d) {
-    final u = d.toUtc();
-    return '${u.year.toString().padLeft(4, '0')}-'
-        '${u.month.toString().padLeft(2, '0')}-'
-        '${u.day.toString().padLeft(2, '0')}';
-  }
+  /// Render `DateTime` as `YYYY-MM-DD` for Postgres `date` columns by
+  /// FACE VALUE. Must NOT call `.toUtc()`: the date picker returns a
+  /// local-midnight DateTime, and `.toUtc()` in a positive-offset zone
+  /// (e.g. PH UTC+8) rolls the date back a day, persisting the wrong
+  /// target_date. A calendar date has no timezone.
+  String _dateOnly(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-'
+      '${d.month.toString().padLeft(2, '0')}-'
+      '${d.day.toString().padLeft(2, '0')}';
 }

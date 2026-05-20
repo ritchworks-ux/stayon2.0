@@ -31,7 +31,12 @@ class ItemDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Item')),
+      // skipLoadingOnRefresh: false → after an edit invalidates
+      // itemByIdProvider, show the spinner during the refetch instead of
+      // briefly re-rendering the stale pre-edit item. Guarantees the
+      // detail never shows old data after a save.
       body: async.when(
+        skipLoadingOnRefresh: false,
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _errorBody(context, e),
         data: (item) => _DetailBody(item: item),

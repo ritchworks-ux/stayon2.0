@@ -157,6 +157,25 @@ void main() {
       expect(captured.containsKey('assignee_label'), isFalse);
     });
 
+    test('serializes a local-midnight target_date by face value '
+        '(timezone off-by-one regression)', () async {
+      when(() => ds.insert(any())).thenAnswer((_) async => _row());
+
+      // showDatePicker returns local midnight; the saved date must be
+      // the same calendar day, not rolled back by .toUtc().
+      await repo.add(
+        name: 'x',
+        category: ItemCategory.other,
+        dateType: ItemDateType.due,
+        targetDate: DateTime(2026, 5, 25),
+      );
+
+      final captured =
+          verify(() => ds.insert(captureAny())).captured.single
+              as Map<String, dynamic>;
+      expect(captured['target_date'], '2026-05-25');
+    });
+
     test('payload includes optional fields when supplied', () async {
       when(() => ds.insert(any())).thenAnswer((_) async => _row());
 

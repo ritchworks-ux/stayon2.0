@@ -45,6 +45,31 @@ void main() {
     expect(Item.fromJson(item.toJson()), item);
   });
 
+  test('serializes target_date by face value for both local and UTC DateTimes '
+      '(timezone off-by-one regression)', () {
+    Item make(DateTime d) => Item(
+      id: 'a',
+      ownerId: 'o',
+      name: 'x',
+      category: ItemCategory.other,
+      dateType: ItemDateType.expires,
+      targetDate: d,
+      currencyCode: 'PHP',
+      status: ItemStatus.active,
+      createdAt: DateTime.utc(2026, 1, 1),
+      updatedAt: DateTime.utc(2026, 1, 1),
+    );
+    // A local-midnight date (what showDatePicker returns) and a UTC
+    // date with the same calendar day must BOTH serialize to that day.
+    // Before the fix, .toUtc() on local midnight in a +offset zone
+    // rolled the local one back to '2026-05-22'.
+    expect(make(DateTime(2026, 5, 23)).toJson()['target_date'], '2026-05-23');
+    expect(
+      make(DateTime.utc(2026, 5, 23)).toJson()['target_date'],
+      '2026-05-23',
+    );
+  });
+
   test('decodes a Supabase row shape (date as YYYY-MM-DD string)', () {
     final row = {
       'id': 'abc',

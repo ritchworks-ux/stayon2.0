@@ -41,8 +41,8 @@ String _dtToJson(ItemDateType d) => d.dbValue;
 ItemStatus _statusFromJson(String v) => ItemStatus.fromDb(v);
 String _statusToJson(ItemStatus s) => s.dbValue;
 
-/// Postgres `date` round-trip. Always UTC midnight so equality with
-/// `DateTime.utc(y, m, d)` holds.
+/// Postgres `date` round-trip. Parsed as UTC midnight so equality with
+/// `DateTime.utc(y, m, d)` holds in tests and date math.
 DateTime _dateFromJson(String v) {
   final parts = v.split('-');
   return DateTime.utc(
@@ -52,9 +52,13 @@ DateTime _dateFromJson(String v) {
   );
 }
 
-String _dateToJson(DateTime d) {
-  final u = d.toUtc();
-  return '${u.year.toString().padLeft(4, '0')}-'
-      '${u.month.toString().padLeft(2, '0')}-'
-      '${u.day.toString().padLeft(2, '0')}';
-}
+/// Serialize a calendar date by its FACE-VALUE year/month/day. Must NOT
+/// convert to UTC: a target_date has no timezone, and the date picker
+/// returns a local-midnight DateTime. `.toUtc()` on local midnight in a
+/// positive-offset zone (e.g. PH UTC+8) rolls the date back one day,
+/// saving the wrong date. Using the DateTime's own fields is correct
+/// whether it came from the picker (local) or from [_dateFromJson] (UTC).
+String _dateToJson(DateTime d) =>
+    '${d.year.toString().padLeft(4, '0')}-'
+    '${d.month.toString().padLeft(2, '0')}-'
+    '${d.day.toString().padLeft(2, '0')}';
