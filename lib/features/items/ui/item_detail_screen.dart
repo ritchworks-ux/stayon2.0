@@ -103,17 +103,13 @@ class _DetailBody extends ConsumerWidget {
     return result ?? false;
   }
 
-  Future<void> _openEditSheet(
-    BuildContext context, {
-    bool focusDateOnOpen = false,
-  }) async {
+  Future<void> _openEditSheet(BuildContext context) async {
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (_) =>
-          ItemFormSheet(existing: item, focusDateOnOpen: focusDateOnOpen),
+      builder: (_) => ItemFormSheet(existing: item),
     );
   }
 
@@ -290,14 +286,6 @@ class _DetailBody extends ConsumerWidget {
                 onPressed: loading ? null : () => _openEditSheet(context),
                 icon: const Icon(Icons.edit_outlined),
                 label: const Text('Edit'),
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: loading
-                    ? null
-                    : () => _openEditSheet(context, focusDateOnOpen: true),
-                icon: const Icon(Icons.event_repeat_outlined),
-                label: const Text('Mark renewed'),
               ),
               const SizedBox(height: 8),
               OutlinedButton.icon(

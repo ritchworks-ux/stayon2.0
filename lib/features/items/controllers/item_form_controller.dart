@@ -49,8 +49,11 @@ class ItemFormController extends AsyncNotifier<void> {
     });
   }
 
-  /// Patch an existing item. Only non-null fields are sent. Invalidates
-  /// [itemsProvider] on success.
+  /// Patch an existing item. Only non-null fields are sent. On success
+  /// invalidates BOTH [itemsProvider] (so Home re-fetches and re-buckets
+  /// if target_date changed) AND [itemByIdProvider] for this id (so the
+  /// Item Detail screen the user just edited from shows fresh values
+  /// instead of its cached pre-edit copy).
   Future<void> submitEdit(
     String id, {
     String? name,
@@ -74,6 +77,7 @@ class ItemFormController extends AsyncNotifier<void> {
         amountMinor: amountMinor,
       );
       ref.invalidate(itemsProvider);
+      ref.invalidate(itemByIdProvider(id));
     });
   }
 

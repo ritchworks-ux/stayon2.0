@@ -204,54 +204,102 @@ void main() {
   });
 
   group('submitEdit', () {
-    test(
-      'delegates to repository.update and invalidates itemsProvider',
-      () async {
-        var fetchCount = 0;
-        when(() => repo.fetchActive()).thenAnswer((_) async {
-          fetchCount++;
-          return [_stub(id: 'a')];
-        });
-        when(
-          () => repo.update(
-            any(),
-            name: any(named: 'name'),
-            category: any(named: 'category'),
-            dateType: any(named: 'dateType'),
-            targetDate: any(named: 'targetDate'),
-            notes: any(named: 'notes'),
-            assigneeLabel: any(named: 'assigneeLabel'),
-            amountMinor: any(named: 'amountMinor'),
-          ),
-        ).thenAnswer((_) async => _stub(id: 'a'));
+    test('delegates to repository.update and invalidates itemsProvider '
+        'AND itemByIdProvider (edit-refresh regression)', () async {
+      var fetchCount = 0;
+      var getByIdCount = 0;
+      when(() => repo.fetchActive()).thenAnswer((_) async {
+        fetchCount++;
+        return [_stub(id: 'a')];
+      });
+      when(() => repo.getById('a')).thenAnswer((_) async {
+        getByIdCount++;
+        return _stub(id: 'a');
+      });
+      when(
+        () => repo.update(
+          any(),
+          name: any(named: 'name'),
+          category: any(named: 'category'),
+          dateType: any(named: 'dateType'),
+          targetDate: any(named: 'targetDate'),
+          notes: any(named: 'notes'),
+          assigneeLabel: any(named: 'assigneeLabel'),
+          amountMinor: any(named: 'amountMinor'),
+        ),
+      ).thenAnswer((_) async => _stub(id: 'a'));
 
-        final c = makeContainer();
-        addTearDown(c.dispose);
+      final c = makeContainer();
+      addTearDown(c.dispose);
 
-        await c.read(itemsProvider.future);
-        expect(fetchCount, 1);
+      // Prime both providers so we can detect invalidation re-fetches.
+      await c.read(itemsProvider.future);
+      await c.read(itemByIdProvider('a').future);
+      expect(fetchCount, 1);
+      expect(getByIdCount, 1);
 
-        await c
-            .read(itemFormControllerProvider.notifier)
-            .submitEdit('a', name: 'New name');
+      await c
+          .read(itemFormControllerProvider.notifier)
+          .submitEdit('a', name: 'New name');
 
-        await c.read(itemsProvider.future);
-        expect(fetchCount, 2);
+      // Both providers re-fetch after invalidation.
+      await c.read(itemsProvider.future);
+      await c.read(itemByIdProvider('a').future);
+      expect(fetchCount, 2);
+      expect(getByIdCount, 2);
 
-        verify(
-          () => repo.update(
-            'a',
-            name: 'New name',
-            category: null,
-            dateType: null,
-            targetDate: null,
-            notes: null,
-            assigneeLabel: null,
-            amountMinor: null,
-          ),
-        ).called(1);
-      },
-    );
+      verify(
+        () => repo.update(
+          'a',
+          name: 'New name',
+          category: null,
+          dateType: null,
+          targetDate: null,
+          notes: null,
+          assigneeLabel: null,
+          amountMinor: null,
+        ),
+      ).called(1);
+    });
+
+    test('submitEdit sends the changed target_date in the update', () async {
+      when(() => repo.fetchActive()).thenAnswer((_) async => []);
+      when(() => repo.getById(any())).thenAnswer((_) async => _stub(id: 'a'));
+      when(
+        () => repo.update(
+          any(),
+          name: any(named: 'name'),
+          category: any(named: 'category'),
+          dateType: any(named: 'dateType'),
+          targetDate: any(named: 'targetDate'),
+          notes: any(named: 'notes'),
+          assigneeLabel: any(named: 'assigneeLabel'),
+          amountMinor: any(named: 'amountMinor'),
+        ),
+      ).thenAnswer((_) async => _stub(id: 'a'));
+
+      final c = makeContainer();
+      addTearDown(c.dispose);
+
+      final newDate = DateTime.utc(2027, 3, 15);
+      await c
+          .read(itemFormControllerProvider.notifier)
+          .submitEdit('a', targetDate: newDate);
+
+      final captured = verify(
+        () => repo.update(
+          'a',
+          name: any(named: 'name'),
+          category: any(named: 'category'),
+          dateType: any(named: 'dateType'),
+          targetDate: captureAny(named: 'targetDate'),
+          notes: any(named: 'notes'),
+          assigneeLabel: any(named: 'assigneeLabel'),
+          amountMinor: any(named: 'amountMinor'),
+        ),
+      ).captured;
+      expect(captured.single, newDate);
+    });
 
     test('surfaces ItemException as error state', () async {
       when(

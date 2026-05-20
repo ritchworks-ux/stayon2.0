@@ -73,6 +73,19 @@ void main() {
     }
   }
 
+  testWidgets('Item Detail shows Edit + Archive + Delete but NOT Mark renewed '
+      '(Phase 2 simplification)', (tester) async {
+    when(() => repo.getById('abc')).thenAnswer((_) async => _stub(id: 'abc'));
+    when(() => repo.fetchActive()).thenAnswer((_) async => []);
+
+    await pumpApp(tester);
+
+    expect(find.widgetWithText(FilledButton, 'Edit'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Archive'), findsOneWidget);
+    expect(find.widgetWithText(OutlinedButton, 'Delete'), findsOneWidget);
+    expect(find.text('Mark renewed'), findsNothing);
+  });
+
   testWidgets(
     'Archive -> snackbar Undo still calls restore after navigating to /home',
     (tester) async {

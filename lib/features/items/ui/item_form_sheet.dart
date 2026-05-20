@@ -22,14 +22,10 @@ import 'widgets/category_chip_selector.dart';
 /// On successful submit the controller invalidates `itemsProvider` so
 /// Home re-fetches; this sheet pops itself off the navigator stack.
 class ItemFormSheet extends ConsumerStatefulWidget {
-  const ItemFormSheet({super.key, this.existing, this.focusDateOnOpen = false});
+  const ItemFormSheet({super.key, this.existing});
 
   /// Edit mode payload. Null for Add mode.
   final Item? existing;
-
-  /// If true, the date picker opens automatically after first frame
-  /// (used by Item Detail's "Mark renewed" shortcut in Task 17).
-  final bool focusDateOnOpen;
 
   @override
   ConsumerState<ItemFormSheet> createState() => _ItemFormSheetState();
@@ -59,10 +55,6 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     _dateType = e?.dateType ?? ItemDateType.expires;
     _targetDate = e?.targetDate ?? DateTime.now();
     _amountMinor = e?.amountMinor;
-
-    if (widget.focusDateOnOpen) {
-      WidgetsBinding.instance.addPostFrameCallback((_) => _pickDate());
-    }
   }
 
   @override
@@ -88,7 +80,19 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+
+    // Capture pre-await so we don't touch the sheet's BuildContext after
+    // it pops (the snackbar lives on the root ScaffoldMessenger and
+    // survives the pop).
+    final messenger = ScaffoldMessenger.of(context);
+    final navigator = Navigator.of(context);
     final notifier = ref.read(itemFormControllerProvider.notifier);
+
+    final notes = _notes.text.trim().isEmpty ? null : _notes.text.trim();
+    final assignee = _assignee.text.trim().isEmpty
+        ? null
+        : _assignee.text.trim();
+
     if (_isEdit) {
       await notifier.submitEdit(
         widget.existing!.id,
@@ -96,10 +100,8 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
         category: _category,
         dateType: _dateType,
         targetDate: _targetDate,
-        notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
-        assigneeLabel: _assignee.text.trim().isEmpty
-            ? null
-            : _assignee.text.trim(),
+        notes: notes,
+        assigneeLabel: assignee,
         amountMinor: _amountMinor,
       );
     } else {
@@ -108,16 +110,21 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
         category: _category,
         dateType: _dateType,
         targetDate: _targetDate,
-        notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
-        assigneeLabel: _assignee.text.trim().isEmpty
-            ? null
-            : _assignee.text.trim(),
+        notes: notes,
+        assigneeLabel: assignee,
         amountMinor: _amountMinor,
       );
     }
-    if (mounted && !ref.read(itemFormControllerProvider).hasError) {
-      Navigator.of(context).pop();
-    }
+
+    if (!mounted) return;
+    // Error path keeps the sheet open; the ref.listen below surfaces
+    // the failure message.
+    if (ref.read(itemFormControllerProvider).hasError) return;
+
+    messenger.showSnackBar(
+      SnackBar(content: Text(_isEdit ? 'Item updated.' : 'Item added.')),
+    );
+    navigator.pop();
   }
 
   @override
