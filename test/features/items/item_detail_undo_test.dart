@@ -114,6 +114,11 @@ void main() {
       // The snackbar persists across the route change (root
       // ScaffoldMessenger). Tap its Undo action.
       expect(find.text('Item archived.'), findsOneWidget);
+      // Auto-dismiss after exactly 5 seconds.
+      expect(
+        tester.widget<SnackBar>(find.byType(SnackBar)).duration,
+        const Duration(seconds: 5),
+      );
       await tester.tap(find.widgetWithText(SnackBarAction, 'Undo'));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));

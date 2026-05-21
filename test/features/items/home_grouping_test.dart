@@ -57,22 +57,34 @@ void main() {
         'Due in 6 days',
       );
     });
-    test('7 -> Due in 1 week (singular regression)', () {
+    test('7 -> Due in 7 days (day-level precision)', () {
       expect(
         relativeDateLabel(now.add(const Duration(days: 7)), now: now),
-        'Due in 1 week',
+        'Due in 7 days',
       );
     });
-    test('10 -> Due in 1 week (rounded, singular)', () {
+    test('11 -> Due in 11 days (no week rounding)', () {
       expect(
-        relativeDateLabel(now.add(const Duration(days: 10)), now: now),
-        'Due in 1 week',
+        relativeDateLabel(now.add(const Duration(days: 11)), now: now),
+        'Due in 11 days',
       );
     });
-    test('14 -> Due in 2 weeks', () {
+    test('30 -> Due in 30 days (upper day-level bound)', () {
       expect(
-        relativeDateLabel(now.add(const Duration(days: 14)), now: now),
-        'Due in 2 weeks',
+        relativeDateLabel(now.add(const Duration(days: 30)), now: now),
+        'Due in 30 days',
+      );
+    });
+    test('11 days overdue -> Overdue by 11 days', () {
+      expect(
+        relativeDateLabel(now.subtract(const Duration(days: 11)), now: now),
+        'Overdue by 11 days',
+      );
+    });
+    test('45 -> Due in 2 months (months kick in past 30 days)', () {
+      expect(
+        relativeDateLabel(now.add(const Duration(days: 45)), now: now),
+        'Due in 2 months',
       );
     });
     test('45 -> Due in 2 months (rounded)', () {

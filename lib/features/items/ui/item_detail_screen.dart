@@ -16,7 +16,8 @@ import 'item_form_sheet.dart';
 /// Full-screen route for a single item.
 ///
 /// Watches `itemByIdProvider(id)`; routes through loading / error / data
-/// states. The action row hosts Edit / Mark renewed / Archive / Delete;
+/// states. The action row hosts Edit / Archive / Delete (Mark renewed
+/// was removed in Phase 2 — use Edit to change the date);
 /// archive + delete confirm via AlertDialog and show an Undo snackbar
 /// on success. Pop back to Home after destructive actions so the user
 /// doesn't sit on a now-hidden item.
@@ -142,6 +143,12 @@ class _DetailBody extends ConsumerWidget {
       _showError(messenger, actions, 'archive');
       return;
     }
+    // Navigate FIRST, then show the snackbar on the destination (Home).
+    // Showing before navigation orphans the SnackBar on the torn-down
+    // detail Scaffold, so its 5-second auto-dismiss timer never fires.
+    // `messenger` is the root ScaffoldMessengerState and survives the
+    // route change, so it presents the snackbar cleanly on Home.
+    router.go('/home');
     messenger.showSnackBar(
       SnackBar(
         content: const Text('Item archived.'),
@@ -152,7 +159,6 @@ class _DetailBody extends ConsumerWidget {
         ),
       ),
     );
-    router.go('/home');
   }
 
   Future<void> _trash(BuildContext context, WidgetRef ref) async {
@@ -175,6 +181,8 @@ class _DetailBody extends ConsumerWidget {
       _showError(messenger, actions, 'delete');
       return;
     }
+    // Navigate first, then show the snackbar on Home (see _archive note).
+    router.go('/home');
     messenger.showSnackBar(
       SnackBar(
         content: const Text('Item moved to Trash.'),
@@ -185,7 +193,6 @@ class _DetailBody extends ConsumerWidget {
         ),
       ),
     );
-    router.go('/home');
   }
 
   String _statusLabel(ItemStatus s) {
