@@ -22,7 +22,12 @@ void main() {
 
   Widget wrap() => ProviderScope(
     overrides: [authRepositoryProvider.overrideWithValue(repo)],
-    child: const MaterialApp(home: SignInScreen()),
+    child: MaterialApp(
+      // NoSplash avoids the ink_sparkle.frag shader version mismatch
+      // that causes spurious failures when tester.tap() triggers InkWell.
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      home: const SignInScreen(),
+    ),
   );
 
   testWidgets('shows email + password fields and a Sign in button', (

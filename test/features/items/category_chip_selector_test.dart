@@ -7,6 +7,9 @@ import 'package:stayon/features/items/ui/widgets/category_chip.dart';
 import 'package:stayon/features/items/ui/widgets/category_chip_selector.dart';
 
 Widget _wrap(Widget child) => MaterialApp(
+  // NoSplash avoids the ink_sparkle.frag shader version mismatch that
+  // causes spurious failures when tester.tap() triggers InkWell.
+  theme: ThemeData(splashFactory: NoSplash.splashFactory),
   home: Scaffold(
     body: Padding(padding: const EdgeInsets.all(16), child: child),
   ),

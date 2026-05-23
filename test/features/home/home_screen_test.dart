@@ -50,7 +50,14 @@ Widget _wrap({
       authRepositoryProvider.overrideWithValue(authRepo),
       itemRepositoryProvider.overrideWithValue(itemRepo),
     ],
-    child: const MaterialApp(home: HomeScreen()),
+    // Fixed morning clock keeps the greeting deterministic ("Good
+    // morning,") and the date buckets stable regardless of run time.
+    // NoSplash avoids the ink_sparkle.frag shader version mismatch that
+    // causes spurious failures when tester.tap() triggers InkWell.
+    child: MaterialApp(
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
+      home: HomeScreen(now: DateTime(2026, 5, 22, 9)),
+    ),
   );
 }
 
@@ -144,20 +151,26 @@ void main() {
     await tester.pumpWidget(_wrap(authRepo: authRepo, itemRepo: itemRepo));
     await tester.pumpAndSettle();
 
-    // Four item cards rendered.
-    expect(find.byType(ItemCard), findsNWidgets(4));
+    // Four item cards rendered (skipOffstage: false because hero + stat tiles
+    // push some cards below the default test viewport).
+    expect(find.byType(ItemCard, skipOffstage: false), findsNWidgets(4));
     // Section headers present (order matters: Overdue first).
-    expect(find.text('Overdue'), findsOneWidget);
-    expect(find.text('This week'), findsOneWidget);
-    expect(find.text('This month'), findsOneWidget);
-    expect(find.text('Later'), findsOneWidget);
+    expect(find.text('Overdue', skipOffstage: false), findsOneWidget);
+    expect(find.text('This week', skipOffstage: false), findsOneWidget);
+    expect(find.text('This month', skipOffstage: false), findsOneWidget);
+    expect(find.text('Later', skipOffstage: false), findsOneWidget);
     // Item names visible.
-    expect(find.text('Overdue One'), findsOneWidget);
-    expect(find.text('Later One'), findsOneWidget);
+    expect(find.text('Overdue One', skipOffstage: false), findsOneWidget);
+    expect(find.text('Later One', skipOffstage: false), findsOneWidget);
 
     // Verify "Overdue" header appears in the widget tree BEFORE "Later".
-    final overdueTop = tester.getTopLeft(find.text('Overdue')).dy;
-    final laterTop = tester.getTopLeft(find.text('Later')).dy;
+    // Use skipOffstage:false so we can measure items below the fold.
+    final overdueTop = tester
+        .getTopLeft(find.text('Overdue', skipOffstage: false))
+        .dy;
+    final laterTop = tester
+        .getTopLeft(find.text('Later', skipOffstage: false))
+        .dy;
     expect(overdueTop, lessThan(laterTop));
   });
 

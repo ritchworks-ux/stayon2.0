@@ -65,7 +65,12 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [itemRepositoryProvider.overrideWithValue(repo)],
-        child: MaterialApp.router(routerConfig: _testRouter()),
+        child: MaterialApp.router(
+          // NoSplash avoids the ink_sparkle.frag shader version mismatch
+          // that causes spurious failures when tester.tap() triggers InkWell.
+          theme: ThemeData(splashFactory: NoSplash.splashFactory),
+          routerConfig: _testRouter(),
+        ),
       ),
     );
     for (var i = 0; i < 10; i++) {
