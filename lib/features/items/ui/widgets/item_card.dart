@@ -29,7 +29,11 @@ class ItemCard extends StatelessWidget {
     final t = Theme.of(context).textTheme;
     final isOverdue =
         bucketFor(item.targetDate, now: now) == DateBucket.overdue;
-    final rel = relativeDateLabel(item.targetDate, now: now);
+    final rel = relativeDateLabel(
+      item.targetDate,
+      now: now,
+      dateType: item.dateType,
+    );
     final amount = pesoFromMinor(item.amountMinor);
 
     return Semantics(
@@ -45,7 +49,7 @@ class ItemCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           child: Ink(
             decoration: BoxDecoration(
-              color: item.category.surface,
+              color: item.category.surfaceFor(context),
               borderRadius: BorderRadius.circular(16),
             ),
             child: Padding(

@@ -220,7 +220,7 @@ class _DetailBody extends ConsumerWidget {
     final t = Theme.of(context).textTheme;
     final actions = ref.watch(itemActionsControllerProvider);
     final loading = actions.isLoading;
-    final rel = relativeDateLabel(item.targetDate);
+    final rel = relativeDateLabel(item.targetDate, dateType: item.dateType);
     final dateStr = DateFormat('MMM d, y').format(item.targetDate);
     final amount = pesoFromMinor(item.amountMinor);
 
@@ -234,7 +234,7 @@ class _DetailBody extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: item.category.surface,
+                color: item.category.surfaceFor(context),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Column(

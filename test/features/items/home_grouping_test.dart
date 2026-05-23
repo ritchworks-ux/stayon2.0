@@ -146,6 +146,106 @@ void main() {
     });
   });
 
+  // ── verb-by-dateType coverage ────────────────────────────────────────────
+  // These tests pass an explicit dateType so labels read "Expires / Renews /
+  // Due". The legacy group above omits dateType (null → "Due") to stay
+  // backward-compatible with any call-site that doesn't have a dateType handy.
+  group('relativeDateLabel — verb by dateType', () {
+    test('expires + future → "Expires in N days"', () {
+      expect(
+        relativeDateLabel(
+          now.add(const Duration(days: 5)),
+          now: now,
+          dateType: ItemDateType.expires,
+        ),
+        'Expires in 5 days',
+      );
+    });
+
+    test('renews + future → "Renews in N days"', () {
+      expect(
+        relativeDateLabel(
+          now.add(const Duration(days: 5)),
+          now: now,
+          dateType: ItemDateType.renews,
+        ),
+        'Renews in 5 days',
+      );
+    });
+
+    test('due + future → "Due in N days"', () {
+      expect(
+        relativeDateLabel(
+          now.add(const Duration(days: 5)),
+          now: now,
+          dateType: ItemDateType.due,
+        ),
+        'Due in 5 days',
+      );
+    });
+
+    test('null dateType → "Due in N days" (backward compat)', () {
+      expect(
+        relativeDateLabel(now.add(const Duration(days: 5)), now: now),
+        'Due in 5 days',
+      );
+    });
+
+    test('overdue is always "Overdue by N days" regardless of type', () {
+      for (final dt in ItemDateType.values) {
+        expect(
+          relativeDateLabel(
+            now.subtract(const Duration(days: 3)),
+            now: now,
+            dateType: dt,
+          ),
+          'Overdue by 3 days',
+          reason: 'dateType: $dt',
+        );
+      }
+    });
+
+    test('expires + today → "Expires today"', () {
+      expect(
+        relativeDateLabel(now, now: now, dateType: ItemDateType.expires),
+        'Expires today',
+      );
+    });
+
+    test('renews + tomorrow → "Renews tomorrow"', () {
+      expect(
+        relativeDateLabel(
+          now.add(const Duration(days: 1)),
+          now: now,
+          dateType: ItemDateType.renews,
+        ),
+        'Renews tomorrow',
+      );
+    });
+
+    test('expires + months range → "Expires in N months"', () {
+      expect(
+        relativeDateLabel(
+          now.add(const Duration(days: 45)),
+          now: now,
+          dateType: ItemDateType.expires,
+        ),
+        'Expires in 2 months',
+      );
+    });
+
+    test('renews + over a year → "Renews in over a year"', () {
+      expect(
+        relativeDateLabel(
+          now.add(const Duration(days: 400)),
+          now: now,
+          dateType: ItemDateType.renews,
+        ),
+        'Renews in over a year',
+      );
+    });
+  });
+
   group('bucketize', () {
     test('groups + sorts ascending by target_date within each bucket', () {
       final items = [

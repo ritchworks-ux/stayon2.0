@@ -33,6 +33,9 @@ Item _stub({
 );
 
 Widget _wrap(Widget child) => MaterialApp(
+  // NoSplash avoids the ink_sparkle.frag shader version mismatch that
+  // causes spurious failures when tester.tap() triggers InkWell.
+  theme: ThemeData(splashFactory: NoSplash.splashFactory),
   home: Scaffold(
     body: Padding(padding: const EdgeInsets.all(16), child: child),
   ),
@@ -59,7 +62,7 @@ void main() {
 
       expect(find.text('PhilHealth ID'), findsOneWidget);
       expect(find.text('ID / LICENSE'), findsOneWidget);
-      expect(find.text('Due in 3 days'), findsOneWidget);
+      expect(find.text('Expires in 3 days'), findsOneWidget);
     });
 
     testWidgets('shows amount when present, hides when null', (tester) async {
@@ -161,7 +164,7 @@ void main() {
       final node = tester.getSemantics(find.byType(ItemCard));
       expect(node.label, contains('PhilHealth'));
       expect(node.label, contains('ID / License'));
-      expect(node.label, contains('Due in 3 days'));
+      expect(node.label, contains('Expires in 3 days'));
       expect(node.label, contains('Mom'));
       expect(node.label, contains('₱2,500.00'));
     });
