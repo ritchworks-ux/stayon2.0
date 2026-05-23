@@ -37,6 +37,9 @@ Widget _wrap({required _MockRepo repo, Item? existing}) {
   return ProviderScope(
     overrides: [itemRepositoryProvider.overrideWithValue(repo)],
     child: MaterialApp(
+      // NoSplash avoids the ink_sparkle.frag shader version mismatch that
+      // causes spurious failures when tester.tap() triggers InkWell.
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
       home: Scaffold(body: ItemFormSheet(existing: existing)),
     ),
   );
@@ -155,6 +158,69 @@ void main() {
       ).captured;
       expect(captured.single, 'My Item');
     });
+  });
+
+  group('past-date warning', () {
+    // The real DatePicker dialog cannot be triggered in headless tests.
+    // ItemFormSheet accepts a @visibleForTesting testInitialDate param so
+    // tests can drive the warning without opening the picker.
+
+    testWidgets(
+      'shows warning in Add mode when initial date is in the past',
+      (tester) async {
+        final pastDate = DateTime.now().subtract(const Duration(days: 5));
+        await _setTallSurface(tester);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [itemRepositoryProvider.overrideWithValue(repo)],
+            child: MaterialApp(
+              theme: ThemeData(splashFactory: NoSplash.splashFactory),
+              home: Scaffold(
+                body: ItemFormSheet(testInitialDate: pastDate),
+              ),
+            ),
+          ),
+        );
+        await _settle(tester);
+        expect(find.byKey(const Key('past_date_warning')), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'no warning in Add mode when date is today or future',
+      (tester) async {
+        final futureDate = DateTime.now().add(const Duration(days: 10));
+        await _setTallSurface(tester);
+        await tester.pumpWidget(
+          ProviderScope(
+            overrides: [itemRepositoryProvider.overrideWithValue(repo)],
+            child: MaterialApp(
+              theme: ThemeData(splashFactory: NoSplash.splashFactory),
+              home: Scaffold(
+                body: ItemFormSheet(testInitialDate: futureDate),
+              ),
+            ),
+          ),
+        );
+        await _settle(tester);
+        expect(find.byKey(const Key('past_date_warning')), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'no warning in Edit mode even when item has a past target date',
+      (tester) async {
+        final pastItem = _stub(
+          targetDate: DateTime.now().subtract(const Duration(days: 10)),
+        );
+        await _setTallSurface(tester);
+        await tester.pumpWidget(_wrap(repo: repo, existing: pastItem));
+        await _settle(tester);
+        // Edit mode suppresses the warning — past dates on existing items
+        // are expected (the user may not have renewed yet).
+        expect(find.byKey(const Key('past_date_warning')), findsNothing);
+      },
+    );
   });
 
   group('Edit mode', () {

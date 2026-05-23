@@ -22,10 +22,17 @@ import 'widgets/category_chip_selector.dart';
 /// On successful submit the controller invalidates `itemsProvider` so
 /// Home re-fetches; this sheet pops itself off the navigator stack.
 class ItemFormSheet extends ConsumerStatefulWidget {
-  const ItemFormSheet({super.key, this.existing});
+  const ItemFormSheet({super.key, this.existing, this.testInitialDate});
 
   /// Edit mode payload. Null for Add mode.
   final Item? existing;
+
+  /// Overrides the initial [_targetDate] in Add mode for unit tests.
+  /// The real DatePicker dialog cannot be triggered in headless tests, so
+  /// tests set this to drive the past-date warning without opening the picker.
+  /// Must not be set in production — it is ignored in Edit mode.
+  @visibleForTesting
+  final DateTime? testInitialDate;
 
   @override
   ConsumerState<ItemFormSheet> createState() => _ItemFormSheetState();
@@ -44,6 +51,22 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
 
   bool get _isEdit => widget.existing != null;
 
+  /// True when the selected date is strictly before today (midnight-level).
+  /// Only relevant in Add mode — Edit mode suppresses the warning because
+  /// past dates on existing items are expected (the user may not have
+  /// renewed yet).
+  bool get _targetIsInPast {
+    if (_isEdit) return false;
+    final today = DateTime.now();
+    final todayMidnight = DateTime(today.year, today.month, today.day);
+    final targetMidnight = DateTime(
+      _targetDate.year,
+      _targetDate.month,
+      _targetDate.day,
+    );
+    return targetMidnight.isBefore(todayMidnight);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +76,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     _assignee = TextEditingController(text: e?.assigneeLabel ?? '');
     _category = e?.category ?? ItemCategory.other;
     _dateType = e?.dateType ?? ItemDateType.expires;
-    _targetDate = e?.targetDate ?? DateTime.now();
+    _targetDate = e?.targetDate ?? widget.testInitialDate ?? DateTime.now();
     _amountMinor = e?.amountMinor;
   }
 
@@ -244,6 +267,35 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                         ],
                       ),
                     ),
+                  ),
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: _targetIsInPast
+                        ? Padding(
+                            key: const Key('past_date_warning'),
+                            padding: const EdgeInsets.only(top: 6),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(
+                                  Icons.info_outline,
+                                  size: 16,
+                                  color: AppColors.coral,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    'This date is in the past — item will appear as Overdue.',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(color: AppColors.coral),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        : const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 24),
 
