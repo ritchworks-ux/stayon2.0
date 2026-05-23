@@ -11,6 +11,7 @@ import '../../features/calendar/ui/calendar_screen.dart';
 import '../../features/family/ui/family_screen.dart';
 import '../../features/home/ui/home_screen.dart';
 import '../../features/items/ui/item_detail_screen.dart';
+import '../../features/settings/ui/settings_screen.dart';
 import '../shell/app_shell.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -41,13 +42,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/auth/sign-in', builder: (_, _) => const SignInScreen()),
       GoRoute(path: '/auth/sign-up', builder: (_, _) => const SignUpScreen()),
-      // Item Detail is full-screen (no bottom nav). Auth-guarded by the
-      // top-level `redirect` callback above.
+      // Full-screen routes (no bottom nav). Auth-guarded by the redirect above.
       GoRoute(
         path: '/item/:id',
         builder: (_, state) =>
             ItemDetailScreen(id: state.pathParameters['id']!),
       ),
+      GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(navigationShell: shell),
         branches: [

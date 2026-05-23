@@ -3,48 +3,47 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../app/theme/colors.dart';
-import '../../auth/controllers/auth_controller.dart';
-import '../../auth/controllers/auth_providers.dart';
 import '../../items/controllers/item_providers.dart';
 import '../../items/ui/widgets/empty_home_state.dart';
 import '../../items/ui/widgets/item_card_section.dart';
 import '../../items/utils/date_buckets.dart';
+import 'widgets/home_header.dart';
+import 'widgets/stat_tiles.dart';
+import 'widgets/this_week_hero_card.dart';
 
 /// Home dashboard.
 ///
-/// Header: greeting + sign-out icon.
-/// Body: live `itemsProvider` data, grouped into Overdue / This week /
-/// This month / Later sections. Loading/empty/error all handled.
-/// Pull-to-refresh re-fetches via `ref.refresh(itemsProvider.future)`.
-///
-/// Tap on an [ItemCard] currently shows a placeholder snackbar; Task 15
-/// wires `/item/:id` routing and replaces this stub.
+/// Header: avatar (sign-out) + time-aware greeting + bell → Alerts.
+/// Body: live `itemsProvider` data. When there are items, a "This week"
+/// hero card and two stat tiles (Due soon / Upcoming) sit above the
+/// Overdue / This week / This month / Later sections. Loading, empty,
+/// and error states are all handled. Pull-to-refresh re-fetches via
+/// `ref.refresh(itemsProvider.future)`.
 class HomeScreen extends ConsumerWidget {
-  const HomeScreen({super.key});
+  const HomeScreen({super.key, this.now});
+
+  /// Injected in tests for a deterministic clock; defaults to the wall
+  /// clock in production. Drives the greeting, hero, tiles, and buckets.
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(currentUserProvider);
     final items = ref.watch(itemsProvider);
-    final greeting = user?.displayName?.trim().isNotEmpty == true
-        ? user!.displayName!
-        : user?.email.split('@').first ?? 'there';
+    final clock = now ?? DateTime.now();
 
     return Scaffold(
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () async {
             // Returns the next-fetch Future; RefreshIndicator awaits it
-            // before hiding its spinner. Use unawaited-style discard so
-            // the analyzer doesn't flag `refresh`'s return value.
+            // before hiding its spinner. Discard the value into `_` so
+            // the analyzer doesn't flag `refresh`'s return.
             final _ = await ref.refresh(itemsProvider.future);
           },
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              SliverToBoxAdapter(
-                child: _GreetingHeader(greeting: greeting, ref: ref),
-              ),
+              SliverToBoxAdapter(child: HomeHeader(now: clock)),
               items.when(
                 skipLoadingOnRefresh: false,
                 loading: () => const SliverFillRemaining(
@@ -64,15 +63,30 @@ class HomeScreen extends ConsumerWidget {
                       child: EmptyHomeState(),
                     );
                   }
-                  final buckets = bucketize(list);
+                  final buckets = bucketize(list, now: clock);
+                  final overdue = buckets[DateBucket.overdue]!.length;
+                  final thisWeek = buckets[DateBucket.thisWeek]!.length;
+                  final thisMonth = buckets[DateBucket.thisMonth]!.length;
+                  final later = buckets[DateBucket.later]!.length;
+                  final dueSoon = overdue + thisWeek;
+                  final upcoming = thisMonth + later;
+
                   return SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate.fixed([
+                        ThisWeekHeroCard(
+                          dueSoon: dueSoon,
+                          overdue: overdue,
+                          onTap: () => context.go('/alerts'),
+                        ),
+                        const SizedBox(height: 12),
+                        StatTiles(dueSoon: dueSoon, upcoming: upcoming),
                         for (final bucket in DateBucket.values)
                           ItemCardSection(
                             bucket: bucket,
                             items: buckets[bucket] ?? const [],
+                            now: clock,
                             onTapItem: (item) =>
                                 context.push('/item/${item.id}'),
                           ),
@@ -84,40 +98,6 @@ class HomeScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _GreetingHeader extends StatelessWidget {
-  const _GreetingHeader({required this.greeting, required this.ref});
-  final String greeting;
-  final WidgetRef ref;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Good morning,', style: t.bodyLarge),
-                Text(greeting, style: t.displayMedium),
-              ],
-            ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Sign out',
-            onPressed: () =>
-                ref.read(authControllerProvider.notifier).signOut(),
-          ),
-        ],
       ),
     );
   }
