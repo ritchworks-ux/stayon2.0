@@ -8,6 +8,8 @@ Never miss what matters. Track expiry, renewal, and due dates for warranties, su
 - **Spec:** [docs/superpowers/specs/2026-05-18-stayon-mvp-design.md](docs/superpowers/specs/2026-05-18-stayon-mvp-design.md)
 - **Master plan:** [docs/superpowers/plans/2026-05-18-stayon-mvp.md](docs/superpowers/plans/2026-05-18-stayon-mvp.md)
 - **Phase 1 plan:** [docs/superpowers/plans/2026-05-18-stayon-phase-1-auth.md](docs/superpowers/plans/2026-05-18-stayon-phase-1-auth.md)
+- **Phase 2 plan:** [docs/superpowers/plans/2026-05-18-stayon-phase-2-items.md](docs/superpowers/plans/2026-05-18-stayon-phase-2-items.md)
+- **Phase 2.5 plan:** [docs/superpowers/plans/2026-05-22-stayon-phase-2.5-ux-polish.md](docs/superpowers/plans/2026-05-22-stayon-phase-2.5-ux-polish.md)
 
 ---
 
@@ -70,6 +72,43 @@ Verify in Table Editor that `profiles` exists with a green **RLS enabled** badge
 
 ---
 
+## Phase 2.5 status — UX Polish (tag [`v0.4-ux-polish`](https://github.com/ritchworks-ux/stayon2.0/releases/tag/v0.4-ux-polish))
+
+### Shipped
+
+- **Date-type-aware labels** — `relativeDateLabel` now shows "Expires in 3 days", "Renews tomorrow", "Due today" etc. based on `ItemDateType`; overdue copy stays type-agnostic
+- **Past-date warning** — Add Item form shows a coral info row (`AnimatedSwitcher` cross-fade) when the selected date is in the past; Edit mode intentionally omits it
+- **Overdue badge** — Alerts nav destination shows a live `Badge.count` driven by `itemsProvider`; hidden when count is zero
+- **Dark-mode category surfaces** — All 9 category colors have matching dark tokens; `surfaceFor(context)` method picks the right token automatically
+- **Settings screen** — `/settings` route with Light / System / Dark `ChoiceChip` toggle wired to `MaterialApp.themeMode`; Settings entry enabled in Home header
+- **Richer Home dashboard** — ThisWeekHeroCard (due-soon count + overdue callout), StatTiles (Due soon / Upcoming), time-aware greeting
+- **Test suite** — 131 tests, 0 failures; `flutter analyze --fatal-infos` clean
+
+### Known limitations (intentional, deferred)
+
+| Limitation | Resolves in |
+|---|---|
+| Theme preference resets on cold start (no persistence) | Phase 3+ |
+| Calendar / Alerts / Family tabs are stubs | Phases 5–6 |
+| No search / filter on Home | Phase 4 |
+| Attachments not yet supported | Phase 3 |
+| No reminders / push notifications | Phase 4 |
+
+---
+
+## Phase 2 status — Items CRUD (tag [`v0.3-items`](https://github.com/ritchworks-ux/stayon2.0/releases/tag/v0.3-items))
+
+### Shipped
+
+- Full Add / Edit / Archive / Delete / Restore item flow with Supabase backend
+- Item Detail route `/item/:id` with full field display and action row
+- Undo snackbar for archive + delete (5-second window, navigates to Home first)
+- Home dashboard with bucketed sections (Overdue / This week / This month / Later) + pull-to-refresh
+- 7 item categories with icon + color; PHP currency support (minor-unit arithmetic)
+- Supabase RLS migrations `0002_items.sql` + `0003_items_rls.sql`
+
+---
+
 ## Phase 1 status — Auth + App shell (tag [`v0.2-auth`](https://github.com/ritchworks-ux/stayon2.0/releases/tag/v0.2-auth))
 
 ### Shipped
@@ -128,7 +167,9 @@ lib/
     models/               # freezed shared models
   features/
     auth/                 # repo + controller + sign-in/up screens
-    home/                 # empty Home with greeting + logout
+    home/                 # dashboard with sections, hero card, stat tiles
+    items/                # CRUD: category, date, money, form, card, detail
+    settings/             # theme toggle + app info
     calendar/             # stub
     alerts/               # stub
     family/               # stub
@@ -140,6 +181,10 @@ docs/
     plans/                # implementation plans per phase
 test/
   app/router/             # router redirect tests
+  app/shell/              # overdue badge tests
+  core/models/            # item, money unit tests
   features/auth/          # controller + sign-in widget tests
+  features/home/          # dashboard + greeting tests
+  features/items/         # buckets, card, form, detail, undo tests
   widget_test.dart        # app boot smoke
 ```
