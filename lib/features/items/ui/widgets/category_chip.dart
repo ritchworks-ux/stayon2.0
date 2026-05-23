@@ -24,7 +24,7 @@ class CategoryChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = selected ? AppColors.forest : category.surface;
+    final bg = selected ? AppColors.forest : category.surfaceFor(context);
     final fg = selected ? Colors.white : AppColors.ink;
     final border = selected ? AppColors.green : Colors.transparent;
     // Mint reliably contrasts against forest in both light + dark mode.

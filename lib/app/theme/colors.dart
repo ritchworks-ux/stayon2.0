@@ -25,4 +25,14 @@ abstract final class AppColors {
   // Dark mode
   static const darkBg = Color(0xFF0E1411);
   static const darkSurface = Color(0xFF16201B);
+
+  // Dark-mode category surfaces (muted, hue-matched counterparts)
+  static const catMedicineDark = Color(0xFF3D1F16);
+  static const catGroceryDark = Color(0xFF3D2E0D);
+  static const catDocumentDark = Color(0xFF1A2640);
+  static const catSubscriptionDark = Color(0xFF1A2E23);
+  static const catWarrantyDark = Color(0xFF2D2040);
+  static const catBillDark = Color(0xFF3D1520);
+  static const catInsuranceDark = Color(0xFF1A2640);
+  static const catOtherDark = Color(0xFF2A2A2A);
 }
