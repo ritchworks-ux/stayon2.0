@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/models/item.dart';
 import '../../../core/models/item_category.dart';
 import '../../../core/models/item_date_type.dart';
 import '../data/item_repository.dart';
@@ -47,6 +48,42 @@ class ItemFormController extends AsyncNotifier<void> {
       );
       ref.invalidate(itemsProvider);
     });
+  }
+
+  /// Add a new item and return the created item object.
+  ///
+  /// Same as [submitNew] but returns the created Item instead of void.
+  /// Useful when the caller needs the item ID to create related records
+  /// (e.g., attachments).
+  ///
+  /// Throws [ItemException] on failure.
+  Future<Item> submitNewAndReturnItem({
+    required String name,
+    required ItemCategory category,
+    required ItemDateType dateType,
+    required DateTime targetDate,
+    String? notes,
+    String? assigneeLabel,
+    int? amountMinor,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final item = await _repo.add(
+        name: name,
+        category: category,
+        dateType: dateType,
+        targetDate: targetDate,
+        notes: notes,
+        assigneeLabel: assigneeLabel,
+        amountMinor: amountMinor,
+      );
+      ref.invalidate(itemsProvider);
+      state = const AsyncValue.data(null);
+      return item;
+    } catch (e) {
+      state = AsyncValue.error(e, StackTrace.current);
+      rethrow;
+    }
   }
 
   /// Patch an existing item. Only non-null fields are sent. On success
