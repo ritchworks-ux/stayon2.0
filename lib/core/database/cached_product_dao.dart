@@ -13,11 +13,19 @@ class CachedProductDao extends DatabaseAccessor<AppDatabase>
     await into(cachedProducts).insertOnConflictUpdate(product);
   }
 
-  /// Retrieve a cached product by barcode.
-  Future<CachedProduct?> getCachedProduct(String barcode) async {
-    return (select(
-      cachedProducts,
-    )..where((tbl) => tbl.barcode.equals(barcode))).getSingleOrNull();
+  /// Retrieve a cached product by barcode if not expired.
+  ///
+  /// Returns null if the cached product is older than [maxAgeDays].
+  /// Default maxAgeDays is 7 days.
+  Future<CachedProduct?> getCachedProduct(
+    String barcode, {
+    int maxAgeDays = 7,
+  }) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeDays));
+    final query = select(cachedProducts)
+      ..where((tbl) =>
+          tbl.barcode.equals(barcode) & tbl.createdAt.isBiggerThanValue(cutoffDate));
+    return query.getSingleOrNull();
   }
 
   /// Delete a cached product by barcode.
@@ -42,5 +50,16 @@ class CachedProductDao extends DatabaseAccessor<AppDatabase>
   /// Get all cached products.
   Future<List<CachedProduct>> getAllCachedProducts() async {
     return select(cachedProducts).get();
+  }
+
+  /// Delete cached products older than [maxAgeDays].
+  ///
+  /// This prevents database bloat from accumulated stale entries.
+  /// Default maxAgeDays is 30 days.
+  Future<int> cleanupStaleProducts({int maxAgeDays = 30}) async {
+    final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeDays));
+    return (delete(cachedProducts)
+          ..where((tbl) => tbl.createdAt.isSmallerThanValue(cutoffDate)))
+        .go();
   }
 }

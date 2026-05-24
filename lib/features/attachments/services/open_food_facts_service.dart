@@ -29,11 +29,6 @@ class _Product {
     this.genericName,
   });
 
-  final String productName;
-  final String? brands;
-  final String? expirationDate;
-  final String? genericName;
-
   /// Parse from Open Food Facts API response.
   factory _Product.fromJson(Map<String, dynamic> json) {
     final product = json['product'] as Map<String, dynamic>?;
@@ -60,6 +55,11 @@ class _Product {
     );
   }
 
+  final String productName;
+  final String? brands;
+  final String? expirationDate;
+  final String? genericName;
+
   /// Convert to ExtractionResult data map.
   Map<String, dynamic> toExtractionData() => {
     'product_name': productName,
@@ -83,9 +83,6 @@ class OpenFoodFactsService {
   })  : _cachedProductDao = cachedProductDao,
         _httpClient = httpClient ?? http.Client();
 
-  final CachedProductDao _cachedProductDao;
-  final http.Client _httpClient;
-
   static const _baseUrl = 'https://world.openfoodfacts.org/api/v3/product';
   static const _maxRetries = 3;
   static const List<Duration> _retryDelays = [
@@ -93,6 +90,9 @@ class OpenFoodFactsService {
     Duration(seconds: 2),
     Duration(seconds: 4),
   ];
+
+  final CachedProductDao _cachedProductDao;
+  final http.Client _httpClient;
 
   /// Lookup a product by barcode.
   ///
@@ -111,7 +111,15 @@ class OpenFoodFactsService {
       );
     }
 
-    // Check cache first.
+    // Validate barcode format (alphanumeric, 8-18 digits).
+    if (!RegExp(r'^\d{8,18}$').hasMatch(barcode)) {
+      throw BarcodeException(
+        code: 'invalid_barcode',
+        message: 'Barcode must be 8-18 digits',
+      );
+    }
+
+    // Check cache first (respects 7-day TTL by default).
     final cachedProduct = await _cachedProductDao.getCachedProduct(barcode);
     if (cachedProduct != null) {
       try {
@@ -237,7 +245,7 @@ class OpenFoodFactsService {
         if (e.code == 'server_error' || e.code == 'network_error') {
           lastError = e;
           if (attempt < _maxRetries - 1) {
-            await Future.delayed(_retryDelays[attempt]);
+            await Future<void>.delayed(_retryDelays[attempt]);
           }
         } else {
           // Non-retriable error: throw immediately.

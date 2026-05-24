@@ -115,7 +115,8 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
   /// Lookup barcode using Open Food Facts API.
   Future<void> _lookupBarcode(String barcode) async {
     try {
-      final service = ref.read(openFoodFactsServiceProvider);
+      // FutureProvider returns AsyncValue, so we need to await the future
+      final service = await ref.read(openFoodFactsServiceProvider.future);
       final result = await service.lookupBarcode(barcode);
 
       if (!mounted) return;
