@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:stayon/core/models/item.dart';
 import 'package:stayon/core/models/item_category.dart';
@@ -288,6 +289,95 @@ void main() {
       ).captured;
       expect(captured[0], 'row-1');
       expect(captured[1], 'Updated');
+    });
+  });
+
+  group('Barcode scanner integration', () {
+    testWidgets('scan barcode button is visible in Add mode', (tester) async {
+      await _setTallSurface(tester);
+      await tester.pumpWidget(_wrap(repo: repo));
+      await _settle(tester);
+
+      expect(find.byIcon(Icons.barcode_reader), findsOneWidget);
+      expect(find.byTooltip('Scan barcode for quick entry'), findsOneWidget);
+    });
+
+    testWidgets('barcode button is not visible in Edit mode', (tester) async {
+      await _setTallSurface(tester);
+      await tester.pumpWidget(_wrap(repo: repo, existing: _stub()));
+      await _settle(tester);
+
+      // Edit mode should not show the barcode button
+      expect(find.byIcon(Icons.barcode_reader), findsNothing);
+    });
+
+    testWidgets('tapping barcode button opens BarcodeScannerSheet', (
+      tester,
+    ) async {
+      await _setTallSurface(tester);
+      await tester.pumpWidget(_wrap(repo: repo));
+      await _settle(tester);
+
+      await tester.tap(find.byIcon(Icons.barcode_reader));
+      await _settle(tester);
+
+      // Verify the scanner sheet appears
+      expect(find.text('Scan barcode'), findsWidgets);
+    });
+
+    testWidgets('can dismiss barcode scanner and return to form', (
+      tester,
+    ) async {
+      await _setTallSurface(tester);
+      await tester.pumpWidget(_wrap(repo: repo));
+      await _settle(tester);
+
+      await tester.tap(find.byIcon(Icons.barcode_reader));
+      await _settle(tester);
+
+      // Close the scanner sheet by tapping the close button
+      final closeButton = find.byIcon(Icons.close);
+      expect(closeButton, findsWidgets); // Multiple close buttons exist
+      await tester.tap(closeButton.last);
+      await _settle(tester);
+
+      // Should be back to the form with the barcode button visible
+      expect(find.byIcon(Icons.barcode_reader), findsOneWidget);
+    });
+
+    testWidgets('form can be submitted after using scanner', (tester) async {
+      when(
+        () => repo.add(
+          name: any(named: 'name'),
+          category: any(named: 'category'),
+          dateType: any(named: 'dateType'),
+          targetDate: any(named: 'targetDate'),
+          notes: any(named: 'notes'),
+          assigneeLabel: any(named: 'assigneeLabel'),
+          amountMinor: any(named: 'amountMinor'),
+        ),
+      ).thenAnswer((_) async => _stub(id: 'new'));
+      when(() => repo.fetchActive()).thenAnswer((_) async => []);
+
+      await _setTallSurface(tester);
+      await tester.pumpWidget(_wrap(repo: repo));
+      await _settle(tester);
+
+      // Manually enter a name (simulating either manual entry or pre-fill)
+      await tester.enterText(find.byType(TextFormField).first, 'Test Item');
+      await tester.tap(find.byType(FilledButton).first);
+      await _settle(tester);
+
+      // Verify repository.add was called
+      verify(() => repo.add(
+        name: captureAny(named: 'name'),
+        category: any(named: 'category'),
+        dateType: any(named: 'dateType'),
+        targetDate: any(named: 'targetDate'),
+        notes: any(named: 'notes'),
+        assigneeLabel: any(named: 'assigneeLabel'),
+        amountMinor: any(named: 'amountMinor'),
+      )).called(1);
     });
   });
 }

@@ -6,6 +6,7 @@ import '../../../app/theme/colors.dart';
 import '../../../core/models/item.dart';
 import '../../../core/models/item_category.dart';
 import '../../../core/models/item_date_type.dart';
+import '../../attachments/ui/barcode_scanner_sheet.dart';
 import '../controllers/item_form_controller.dart';
 import '../data/item_repository.dart';
 import 'widgets/amount_field.dart';
@@ -101,6 +102,58 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     }
   }
 
+  /// Open the barcode scanner sheet.
+  void _showBarcodeScannerSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) =>
+          BarcodeScannerSheet(onResult: _onBarcodeScannerResult),
+    );
+  }
+
+  /// Handle barcode scanner result and pre-fill form fields.
+  ///
+  /// If [result] is null, the user chose manual entry (no pre-fill).
+  void _onBarcodeScannerResult(dynamic result) {
+    if (result == null) {
+      // User chose manual entry; no pre-fill
+      return;
+    }
+
+    // result is an ExtractionResult from barcode scanner.
+    // It contains:
+    // - type: 'barcode'
+    // - data: {product_name?, brands?, expiration_date?, ...}
+    // - confidence: 0.0-1.0
+    final data = result.data as Map<String, dynamic>?;
+    if (data == null) return;
+
+    if (mounted) {
+      setState(() {
+        // Pre-fill product name if available
+        final productName = data['product_name'] as String?;
+        if (productName != null && productName.isNotEmpty) {
+          _name.text = productName;
+        }
+
+        // Pre-fill expiration date if available
+        final expirationDate = data['expiration_date'] as String?;
+        if (expirationDate != null && expirationDate.isNotEmpty) {
+          try {
+            // Parse date string (expected format: yyyy-MM-dd)
+            final parsedDate = DateTime.parse(expirationDate);
+            _targetDate = parsedDate;
+            // Auto-set date type to 'expires' when barcode provides expiration
+            _dateType = ItemDateType.expires;
+          } catch (_) {
+            // If parsing fails, ignore the expiration date
+          }
+        }
+      });
+    }
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -190,7 +243,21 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                 children: [
                   _grabHandle(),
                   const SizedBox(height: 16),
-                  Text(_isEdit ? 'Edit item' : 'Add item', style: t.titleLarge),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _isEdit ? 'Edit item' : 'Add item',
+                        style: t.titleLarge,
+                      ),
+                      if (!_isEdit)
+                        IconButton(
+                          icon: const Icon(Icons.barcode_reader),
+                          onPressed: _showBarcodeScannerSheet,
+                          tooltip: 'Scan barcode for quick entry',
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
 
                   // Name
