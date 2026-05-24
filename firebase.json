@@ -12,5 +12,11 @@
         "destination": "/index.html"
       }
     ]
-  }
+  },
+  "storage": [
+    {
+      "bucket": "stayon-c6ead.appspot.com",
+      "rules": "firebase/storage.rules"
+    }
+  ]
 }

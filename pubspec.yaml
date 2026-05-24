@@ -18,6 +18,9 @@ dependencies:
 
   # Backend
   supabase_flutter: ^2.5.6
+  firebase_core: ^3.8.0
+  firebase_storage: ^12.3.0
+  cloud_firestore: ^5.5.0
 
   # Models & codegen
   freezed_annotation: ^2.4.4
@@ -45,6 +48,12 @@ dependencies:
 
   # OCR-lite (on-device)
   google_mlkit_text_recognition: ^0.13.1
+
+  # Barcode scanning
+  mobile_scanner: ^5.2.0
+
+  # API clients
+  http: ^1.1.0
 
   # Locale
   intl: ^0.19.0
