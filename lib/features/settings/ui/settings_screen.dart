@@ -27,7 +27,7 @@ class SettingsScreen extends ConsumerWidget {
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      appBar: AppBar(title: const Text('Settings'), leading: const BackButton()),
       body: ListView(
         children: [
           // ── Storage Quota (Free Tier Only) ─────────────────────────────
@@ -188,9 +188,12 @@ class _StorageQuotaSection extends ConsumerWidget {
                 child: OutlinedButton(
                   onPressed: () {
                     // TODO: Navigate to premium tier purchase flow
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(const SnackBar(content: Text('Premium tier coming soon!')));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Premium tier coming soon!'),
+                        duration: Duration(seconds: 5),
+                      ),
+                    );
                   },
                   child: const Text('Upgrade to Premium'),
                 ),

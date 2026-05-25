@@ -70,11 +70,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     if (_isEdit) return false;
     final today = DateTime.now();
     final todayMidnight = DateTime(today.year, today.month, today.day);
-    final targetMidnight = DateTime(
-      _targetDate.year,
-      _targetDate.month,
-      _targetDate.day,
-    );
+    final targetMidnight = DateTime(_targetDate.year, _targetDate.month, _targetDate.day);
     return targetMidnight.isBefore(todayMidnight);
   }
 
@@ -117,8 +113,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (context) =>
-          BarcodeScannerSheet(onResult: _onBarcodeScannerResult),
+      builder: (context) => BarcodeScannerSheet(onResult: _onBarcodeScannerResult),
     );
   }
 
@@ -127,8 +122,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      builder: (context) =>
-          ReceiptPhotoSheet(onPhotoAttached: _onReceiptPhotoAttached),
+      builder: (context) => ReceiptPhotoSheet(onPhotoAttached: _onReceiptPhotoAttached),
     );
   }
 
@@ -137,11 +131,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
   /// - Shows loading spinner while Claude Vision API extracts data
   /// - On success, shows ExtractionReviewSheet for user review
   /// - On failure, shows error message
-  void _onReceiptPhotoAttached(
-    DateTime? dateTime,
-    double? amount,
-    List<int> imageBytes,
-  ) {
+  void _onReceiptPhotoAttached(DateTime? dateTime, double? amount, List<int> imageBytes) {
     // Pre-fill form fields if extraction returned data
     if (dateTime != null && mounted) {
       setState(() {
@@ -249,9 +239,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     final notifier = ref.read(itemFormControllerProvider.notifier);
 
     final notes = _notes.text.trim().isEmpty ? null : _notes.text.trim();
-    final assignee = _assignee.text.trim().isEmpty
-        ? null
-        : _assignee.text.trim();
+    final assignee = _assignee.text.trim().isEmpty ? null : _assignee.text.trim();
 
     if (_isEdit) {
       await notifier.submitEdit(
@@ -287,17 +275,17 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
           } on QuotaException catch (e) {
             // Show quota error to user
             if (mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(e.message)));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(e.message), duration: const Duration(seconds: 5)),
+              );
             }
             return;
           } on AttachmentException catch (e) {
             // Show generic attachment error
             if (mounted) {
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(SnackBar(content: Text(e.message)));
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(e.message), duration: const Duration(seconds: 5)),
+              );
             }
             return;
           }
@@ -315,7 +303,10 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
     if (ref.read(itemFormControllerProvider).hasError) return;
 
     messenger.showSnackBar(
-      SnackBar(content: Text(_isEdit ? 'Item updated.' : 'Item added.')),
+      SnackBar(
+        content: Text(_isEdit ? 'Item updated.' : 'Item added.'),
+        duration: const Duration(seconds: 5),
+      ),
     );
     navigator.pop();
   }
@@ -331,7 +322,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
         final msg = err is ItemException ? err.message : 'Couldn\'t save item';
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        ).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 5)));
       }
     });
 
@@ -363,10 +354,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        _isEdit ? 'Edit item' : 'Add item',
-                        style: t.titleLarge,
-                      ),
+                      Text(_isEdit ? 'Edit item' : 'Add item', style: t.titleLarge),
                       if (!_isEdit)
                         Row(
                           children: [
@@ -418,22 +406,12 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                   const SizedBox(height: 8),
                   SegmentedButton<ItemDateType>(
                     segments: const [
-                      ButtonSegment(
-                        value: ItemDateType.expires,
-                        label: Text('Expires'),
-                      ),
-                      ButtonSegment(
-                        value: ItemDateType.renews,
-                        label: Text('Renews'),
-                      ),
-                      ButtonSegment(
-                        value: ItemDateType.due,
-                        label: Text('Due'),
-                      ),
+                      ButtonSegment(value: ItemDateType.expires, label: Text('Expires')),
+                      ButtonSegment(value: ItemDateType.renews, label: Text('Renews')),
+                      ButtonSegment(value: ItemDateType.due, label: Text('Due')),
                     ],
                     selected: {_dateType},
-                    onSelectionChanged: (s) =>
-                        setState(() => _dateType = s.first),
+                    onSelectionChanged: (s) => setState(() => _dateType = s.first),
                   ),
                   const SizedBox(height: 24),
 
@@ -444,12 +422,9 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                     onTap: _pickDate,
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 14,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.black26),
+                        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -470,19 +445,14 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                             child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(
-                                  Icons.info_outline,
-                                  size: 16,
-                                  color: AppColors.coral,
-                                ),
+                                const Icon(Icons.info_outline, size: 16, color: AppColors.coral),
                                 const SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     'This date is in the past — item will appear as Overdue.',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(color: AppColors.coral),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(color: AppColors.coral),
                                   ),
                                 ),
                               ],
@@ -493,10 +463,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                   const SizedBox(height: 24),
 
                   // Amount (optional)
-                  AmountField(
-                    initialMinor: _amountMinor,
-                    onChanged: (m) => _amountMinor = m,
-                  ),
+                  AmountField(initialMinor: _amountMinor, onChanged: (m) => _amountMinor = m),
                   const SizedBox(height: 16),
 
                   // Assignee (optional)
@@ -546,9 +513,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                   ),
                   const SizedBox(height: 8),
                   TextButton(
-                    onPressed: loading
-                        ? null
-                        : () => Navigator.of(context).pop(),
+                    onPressed: loading ? null : () => Navigator.of(context).pop(),
                     child: const Text('Cancel'),
                   ),
                 ],
@@ -565,7 +530,7 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
       width: 40,
       height: 4,
       decoration: BoxDecoration(
-        color: Colors.black26,
+        color: Theme.of(context).colorScheme.outlineVariant,
         borderRadius: BorderRadius.circular(2),
       ),
     ),

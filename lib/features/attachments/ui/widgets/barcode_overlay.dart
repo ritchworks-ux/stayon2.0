@@ -6,11 +6,7 @@ import 'package:flutter/material.dart';
 /// - Optional corner markers (dots or brackets)
 /// - Status text at the bottom
 class BarcodeOverlay extends StatelessWidget {
-  const BarcodeOverlay({
-    super.key,
-    this.statusText = 'Point camera at barcode',
-    this.statusColor,
-  });
+  const BarcodeOverlay({super.key, this.statusText = 'Point camera at barcode', this.statusColor});
 
   /// Status message shown at the bottom of the overlay
   final String statusText;
@@ -38,16 +34,12 @@ class BarcodeOverlay extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
+                color: Colors.black.withValues(alpha: 0.7),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 statusText,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(color: color, fontSize: 14, fontWeight: FontWeight.w500),
                 textAlign: TextAlign.center,
               ),
             ),

@@ -44,7 +44,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         final msg = err is AuthException ? err.message : 'Sign-in failed';
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        ).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 5)));
       }
     });
 
@@ -63,16 +63,10 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                   const SizedBox(height: 16),
                   PasswordField(controller: _password),
                   const SizedBox(height: 24),
-                  SubmitButton(
-                    label: 'Sign in',
-                    isLoading: loading,
-                    onPressed: _submit,
-                  ),
+                  SubmitButton(label: 'Sign in', isLoading: loading, onPressed: _submit),
                   const SizedBox(height: 16),
                   TextButton(
-                    onPressed: loading
-                        ? null
-                        : () => context.go('/auth/sign-up'),
+                    onPressed: loading ? null : () => context.go('/auth/sign-up'),
                     child: const Text("Don't have an account? Sign up"),
                   ),
                   if (error != null && error is! AuthException)
@@ -80,9 +74,7 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
                       padding: const EdgeInsets.only(top: 16),
                       child: Text(
                         'Something went wrong. Please try again.',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
                       ),
                     ),
                 ],

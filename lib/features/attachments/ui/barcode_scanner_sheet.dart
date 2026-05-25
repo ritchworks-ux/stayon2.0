@@ -30,8 +30,7 @@ class BarcodeScannerSheet extends ConsumerStatefulWidget {
   final void Function(ExtractionResult?) onResult;
 
   @override
-  ConsumerState<BarcodeScannerSheet> createState() =>
-      _BarcodeScannerSheetState();
+  ConsumerState<BarcodeScannerSheet> createState() => _BarcodeScannerSheetState();
 }
 
 class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
@@ -250,11 +249,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
           const SizedBox(height: 40),
           const Icon(Icons.videocam_off, size: 64, color: AppColors.coral),
           const SizedBox(height: 24),
-          Text(
-            'Camera access denied',
-            style: t.titleMedium,
-            textAlign: TextAlign.center,
-          ),
+          Text('Camera access denied', style: t.titleMedium, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           Text(
             'Enable camera access in Settings to scan barcodes.',
@@ -262,15 +257,9 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: 32),
-          FilledButton(
-            onPressed: _openAppSettings,
-            child: const Text('Open Settings'),
-          ),
+          FilledButton(onPressed: _openAppSettings, child: const Text('Open Settings')),
           const SizedBox(height: 16),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
         ],
       ),
     );
@@ -294,11 +283,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.error_outline,
-                    color: AppColors.coral,
-                    size: 48,
-                  ),
+                  const Icon(Icons.error_outline, color: AppColors.coral, size: 48),
                   const SizedBox(height: 16),
                   Text(
                     'Camera error: $message',
@@ -306,10 +291,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 16),
-                  FilledButton(
-                    onPressed: _scannerController.start,
-                    child: const Text('Retry'),
-                  ),
+                  FilledButton(onPressed: _scannerController.start, child: const Text('Retry')),
                 ],
               ),
             );
@@ -320,9 +302,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
           statusText: _state == _ScannerState.loading
               ? 'Looking up barcode...'
               : 'Point camera at barcode',
-          statusColor: _state == _ScannerState.loading
-              ? AppColors.green
-              : Colors.white,
+          statusColor: _state == _ScannerState.loading ? AppColors.green : Colors.white,
         ),
       ],
     );
@@ -346,11 +326,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Success icon
-          const Icon(
-            Icons.check_circle_outline,
-            size: 64,
-            color: AppColors.green,
-          ),
+          const Icon(Icons.check_circle_outline, size: 64, color: AppColors.green),
           const SizedBox(height: 24),
 
           // Barcode code
@@ -361,7 +337,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
               _scannedBarcode!,
               style: t.bodyMedium?.copyWith(
                 fontFamily: 'monospace',
-                color: Colors.black54,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: 24),
@@ -406,10 +382,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
                     : AppColors.coral,
               ),
               const SizedBox(width: 8),
-              Text(
-                '${(confidence * 100).toStringAsFixed(0)}% confident',
-                style: t.bodySmall,
-              ),
+              Text('${(confidence * 100).toStringAsFixed(0)}% confident', style: t.bodySmall),
             ],
           ),
           const SizedBox(height: 32),
@@ -431,17 +404,9 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const SizedBox(height: 24),
-          const Icon(
-            Icons.search_off_outlined,
-            size: 64,
-            color: AppColors.coral,
-          ),
+          const Icon(Icons.search_off_outlined, size: 64, color: AppColors.coral),
           const SizedBox(height: 24),
-          Text(
-            'Barcode not found',
-            style: t.titleMedium,
-            textAlign: TextAlign.center,
-          ),
+          Text('Barcode not found', style: t.titleMedium, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           Text(
             'The scanned barcode is not in our database.',
@@ -454,21 +419,15 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
               'Code: $_scannedBarcode',
               style: t.bodySmall?.copyWith(
                 fontFamily: 'monospace',
-                color: Colors.black54,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
               textAlign: TextAlign.center,
             ),
           ],
           const SizedBox(height: 32),
-          FilledButton(
-            onPressed: _proceedWithManualEntry,
-            child: const Text('Enter manually'),
-          ),
+          FilledButton(onPressed: _proceedWithManualEntry, child: const Text('Enter manually')),
           const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: _resetScanner,
-            child: const Text('Try another barcode'),
-          ),
+          OutlinedButton(onPressed: _resetScanner, child: const Text('Try another barcode')),
         ],
       ),
     );
@@ -484,25 +443,14 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
           const SizedBox(height: 24),
           const Icon(Icons.error_outline, size: 64, color: AppColors.coral),
           const SizedBox(height: 24),
-          Text(
-            'Error scanning barcode',
-            style: t.titleMedium,
-            textAlign: TextAlign.center,
-          ),
+          Text('Error scanning barcode', style: t.titleMedium, textAlign: TextAlign.center),
           const SizedBox(height: 16),
           if (_errorMessage != null)
-            Text(
-              _errorMessage!,
-              style: t.bodyMedium,
-              textAlign: TextAlign.center,
-            ),
+            Text(_errorMessage!, style: t.bodyMedium, textAlign: TextAlign.center),
           const SizedBox(height: 32),
           FilledButton(onPressed: _resetScanner, child: const Text('Retry')),
           const SizedBox(height: 12),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
         ],
       ),
     );
@@ -515,7 +463,7 @@ class _BarcodeScannerSheetState extends ConsumerState<BarcodeScannerSheet> {
         width: 40,
         height: 4,
         decoration: BoxDecoration(
-          color: Colors.black26,
+          color: Theme.of(context).colorScheme.outlineVariant,
           borderRadius: BorderRadius.circular(2),
         ),
       ),

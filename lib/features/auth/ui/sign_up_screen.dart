@@ -47,7 +47,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
         final msg = err is AuthException ? err.message : 'Sign-up failed';
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text(msg)));
+        ).showSnackBar(SnackBar(content: Text(msg), duration: const Duration(seconds: 5)));
       }
     });
 
@@ -73,11 +73,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
             const SizedBox(height: 16),
             PasswordField(controller: _password, isNew: true),
             const SizedBox(height: 24),
-            SubmitButton(
-              label: 'Create account',
-              isLoading: loading,
-              onPressed: _submit,
-            ),
+            SubmitButton(label: 'Create account', isLoading: loading, onPressed: _submit),
             const SizedBox(height: 16),
             TextButton(
               onPressed: loading ? null : () => context.go('/auth/sign-in'),
