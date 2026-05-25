@@ -53,12 +53,8 @@ void main() {
         ).thenAnswer((_) async => null);
 
         when(
-          () => mockHttpClient.get(
-            any(),
-          ),
-        ).thenAnswer(
-          (_) async => http.Response(successResponse, 200),
-        );
+          () => mockHttpClient.get(any()),
+        ).thenAnswer((_) async => http.Response(successResponse, 200));
 
         when(
           () => mockCachedProductDao.insertCachedProduct(any()),
@@ -74,30 +70,34 @@ void main() {
         expect(result.confidence, 0.95);
         expect(result.warnings, isEmpty);
 
-        verify(() => mockCachedProductDao.insertCachedProduct(any()))
-            .called(1);
+        verify(() => mockCachedProductDao.insertCachedProduct(any())).called(1);
       });
 
-      test('Test 2: Barcode not found (HTTP 404) returns 0.0 confidence',
-          () async {
-        when(
-          () => mockCachedProductDao.getCachedProduct(testBarcode),
-        ).thenAnswer((_) async => null);
+      test(
+        'Test 2: Barcode not found (HTTP 404) returns 0.0 confidence',
+        () async {
+          when(
+            () => mockCachedProductDao.getCachedProduct(testBarcode),
+          ).thenAnswer((_) async => null);
 
-        when(
-          () => mockHttpClient.get(any()),
-        ).thenAnswer((_) async => http.Response('', 404));
+          when(
+            () => mockHttpClient.get(any()),
+          ).thenAnswer((_) async => http.Response('', 404));
 
-        expect(
-          () => service.lookupBarcode(testBarcode),
-          throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'not_found')
-                .having((e) => e.message, 'message',
-                    'Product not found in Open Food Facts database'),
-          ),
-        );
-      });
+          expect(
+            () => service.lookupBarcode(testBarcode),
+            throwsA(
+              isA<BarcodeException>()
+                  .having((e) => e.code, 'code', 'not_found')
+                  .having(
+                    (e) => e.message,
+                    'message',
+                    'Product not found in Open Food Facts database',
+                  ),
+            ),
+          );
+        },
+      );
 
       test('Test 3: Rate limit (HTTP 429) does NOT retry', () async {
         when(
@@ -120,43 +120,42 @@ void main() {
         verify(() => mockHttpClient.get(any())).called(1);
       });
 
-      test('Test 4: Server error (HTTP 500) retries with exponential backoff',
-          () async {
-        when(
-          () => mockCachedProductDao.getCachedProduct(testBarcode),
-        ).thenAnswer((_) async => null);
+      test(
+        'Test 4: Server error (HTTP 500) retries with exponential backoff',
+        () async {
+          when(
+            () => mockCachedProductDao.getCachedProduct(testBarcode),
+          ).thenAnswer((_) async => null);
 
-        // First two attempts fail with 500, third succeeds.
-        var callCount = 0;
-        when(
-          () => mockHttpClient.get(any()),
-        ).thenAnswer((_) async {
-          callCount++;
-          if (callCount <= 2) {
-            return http.Response('', 500);
-          }
-          return http.Response(successResponse, 200);
-        });
+          // First two attempts fail with 500, third succeeds.
+          var callCount = 0;
+          when(() => mockHttpClient.get(any())).thenAnswer((_) async {
+            callCount++;
+            if (callCount <= 2) {
+              return http.Response('', 500);
+            }
+            return http.Response(successResponse, 200);
+          });
 
-        when(
-          () => mockCachedProductDao.insertCachedProduct(any()),
-        ).thenAnswer((_) async => Future.value());
+          when(
+            () => mockCachedProductDao.insertCachedProduct(any()),
+          ).thenAnswer((_) async => Future.value());
 
-        final result = await service.lookupBarcode(testBarcode);
+          final result = await service.lookupBarcode(testBarcode);
 
-        expect(result.confidence, 0.95);
-        expect(result.data['product_name'], 'Lactose-free milk');
+          expect(result.confidence, 0.95);
+          expect(result.data['product_name'], 'Lactose-free milk');
 
-        // Should call 3 times (1 initial + 2 retries).
-        verify(() => mockHttpClient.get(any())).called(3);
-      });
+          // Should call 3 times (1 initial + 2 retries).
+          verify(() => mockHttpClient.get(any())).called(3);
+        },
+      );
 
       test('Test 5: Cache hit returns data without HTTP call', () async {
         final cachedProduct = _FakeCachedProduct(
           id: 'cache-1',
           barcode: testBarcode,
-          productData:
-              '{"product_name":"Cached Milk","brands":"Cached Brand"}',
+          productData: '{"product_name":"Cached Milk","brands":"Cached Brand"}',
           createdAt: DateTime.now(),
         );
 
@@ -170,7 +169,10 @@ void main() {
         expect(result.data['product_name'], 'Cached Milk');
         expect(result.data['brands'], 'Cached Brand');
         expect(result.confidence, 0.90);
-        expect(result.warnings, contains('Data from local cache; may be stale'));
+        expect(
+          result.warnings,
+          contains('Data from local cache; may be stale'),
+        );
 
         // HTTP client should NOT be called.
         verifyNever(() => mockHttpClient.get(any()));
@@ -195,8 +197,7 @@ void main() {
         expect(result.data['product_name'], 'Lactose-free milk');
 
         // Should cache the result.
-        verify(() => mockCachedProductDao.insertCachedProduct(any()))
-            .called(1);
+        verify(() => mockCachedProductDao.insertCachedProduct(any())).called(1);
       });
 
       test('Test 7: Network timeout throws BarcodeException', () async {
@@ -204,9 +205,7 @@ void main() {
           () => mockCachedProductDao.getCachedProduct(testBarcode),
         ).thenAnswer((_) async => null);
 
-        when(
-          () => mockHttpClient.get(any()),
-        ).thenAnswer((_) async {
+        when(() => mockHttpClient.get(any())).thenAnswer((_) async {
           await Future.delayed(const Duration(minutes: 5));
           return http.Response('', 200);
         });
@@ -214,8 +213,11 @@ void main() {
         expect(
           () => service.lookupBarcode(testBarcode),
           throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'network_error'),
+            isA<BarcodeException>().having(
+              (e) => e.code,
+              'code',
+              'network_error',
+            ),
           ),
         );
       });
@@ -227,15 +229,16 @@ void main() {
 
         when(
           () => mockHttpClient.get(any()),
-        ).thenAnswer(
-          (_) async => http.Response('{"product": null}', 200),
-        );
+        ).thenAnswer((_) async => http.Response('{"product": null}', 200));
 
         expect(
           () => service.lookupBarcode(testBarcode),
           throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'parse_error'),
+            isA<BarcodeException>().having(
+              (e) => e.code,
+              'code',
+              'parse_error',
+            ),
           ),
         );
       });
@@ -247,9 +250,7 @@ void main() {
 
         // First attempt fails with 500, second succeeds.
         var callCount = 0;
-        when(
-          () => mockHttpClient.get(any()),
-        ).thenAnswer((_) async {
+        when(() => mockHttpClient.get(any())).thenAnswer((_) async {
           callCount++;
           if (callCount == 1) {
             return http.Response('', 500);
@@ -274,8 +275,11 @@ void main() {
         expect(
           () async => service.lookupBarcode(''),
           throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'invalid_barcode'),
+            isA<BarcodeException>().having(
+              (e) => e.code,
+              'code',
+              'invalid_barcode',
+            ),
           ),
         );
 
@@ -287,8 +291,11 @@ void main() {
         expect(
           () async => service.lookupBarcode('ABC-12345'),
           throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'invalid_barcode'),
+            isA<BarcodeException>().having(
+              (e) => e.code,
+              'code',
+              'invalid_barcode',
+            ),
           ),
         );
 
@@ -296,60 +303,73 @@ void main() {
         verifyNever(() => mockHttpClient.get(any()));
       });
 
-      test('Test 10b: Barcode too short (< 8 digits) throws invalid_barcode',
-          () async {
-        expect(
-          () async => service.lookupBarcode('1234567'),
-          throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'invalid_barcode'),
-          ),
-        );
+      test(
+        'Test 10b: Barcode too short (< 8 digits) throws invalid_barcode',
+        () async {
+          expect(
+            () async => service.lookupBarcode('1234567'),
+            throwsA(
+              isA<BarcodeException>().having(
+                (e) => e.code,
+                'code',
+                'invalid_barcode',
+              ),
+            ),
+          );
 
-        // Should not call any external service.
-        verifyNever(() => mockHttpClient.get(any()));
-      });
+          // Should not call any external service.
+          verifyNever(() => mockHttpClient.get(any()));
+        },
+      );
 
-      test('Test 10c: Barcode too long (> 18 digits) throws invalid_barcode',
-          () async {
-        expect(
-          () async => service.lookupBarcode('123456789012345678901'),
-          throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'invalid_barcode'),
-          ),
-        );
+      test(
+        'Test 10c: Barcode too long (> 18 digits) throws invalid_barcode',
+        () async {
+          expect(
+            () async => service.lookupBarcode('123456789012345678901'),
+            throwsA(
+              isA<BarcodeException>().having(
+                (e) => e.code,
+                'code',
+                'invalid_barcode',
+              ),
+            ),
+          );
 
-        // Should not call any external service.
-        verifyNever(() => mockHttpClient.get(any()));
-      });
+          // Should not call any external service.
+          verifyNever(() => mockHttpClient.get(any()));
+        },
+      );
 
-      test('Test 11: Missing product_name in response throws parse_error',
-          () async {
-        when(
-          () => mockCachedProductDao.getCachedProduct(testBarcode),
-        ).thenAnswer((_) async => null);
+      test(
+        'Test 11: Missing product_name in response throws parse_error',
+        () async {
+          when(
+            () => mockCachedProductDao.getCachedProduct(testBarcode),
+          ).thenAnswer((_) async => null);
 
-        const missingNameResponse = '''{
+          const missingNameResponse = '''{
           "product": {
             "brands": "Arla Foods"
           }
         }''';
 
-        when(
-          () => mockHttpClient.get(any()),
-        ).thenAnswer(
-          (_) async => http.Response(missingNameResponse, 200),
-        );
+          when(
+            () => mockHttpClient.get(any()),
+          ).thenAnswer((_) async => http.Response(missingNameResponse, 200));
 
-        expect(
-          () async => service.lookupBarcode(testBarcode),
-          throwsA(
-            isA<BarcodeException>()
-                .having((e) => e.code, 'code', 'parse_error'),
-          ),
-        );
-      });
+          expect(
+            () async => service.lookupBarcode(testBarcode),
+            throwsA(
+              isA<BarcodeException>().having(
+                (e) => e.code,
+                'code',
+                'parse_error',
+              ),
+            ),
+          );
+        },
+      );
 
       test('Test 12: Cache corruption falls through to API call', () async {
         final corruptedProduct = _FakeCachedProduct(
@@ -456,12 +476,12 @@ class _FakeCachedProduct implements CachedProduct {
   final DateTime createdAt;
 
   @override
-  CachedProduct copyWith(
-          {String? id,
-          String? barcode,
-          String? productData,
-          DateTime? createdAt}) =>
-      throw UnimplementedError();
+  CachedProduct copyWith({
+    String? id,
+    String? barcode,
+    String? productData,
+    DateTime? createdAt,
+  }) => throw UnimplementedError();
 
   @override
   CachedProduct copyWithCompanion(CachedProductsCompanion data) =>

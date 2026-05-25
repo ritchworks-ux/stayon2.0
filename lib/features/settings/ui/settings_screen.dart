@@ -20,7 +20,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = Theme.of(context).textTheme;
     final currentMode = ref.watch(themeModeProvider);
-    final isDark = currentMode == ThemeMode.dark ||
+    final isDark =
+        currentMode == ThemeMode.dark ||
         (currentMode == ThemeMode.system &&
             MediaQuery.platformBrightnessOf(context) == Brightness.dark);
 
@@ -42,8 +43,8 @@ class SettingsScreen extends ConsumerWidget {
               currentMode == ThemeMode.system
                   ? 'Following system setting'
                   : isDark
-                      ? 'On'
-                      : 'Off',
+                  ? 'On'
+                  : 'Off',
             ),
             value: isDark,
             onChanged: (_) {

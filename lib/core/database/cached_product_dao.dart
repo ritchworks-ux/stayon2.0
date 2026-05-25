@@ -23,8 +23,11 @@ class CachedProductDao extends DatabaseAccessor<AppDatabase>
   }) async {
     final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeDays));
     final query = select(cachedProducts)
-      ..where((tbl) =>
-          tbl.barcode.equals(barcode) & tbl.createdAt.isBiggerThanValue(cutoffDate));
+      ..where(
+        (tbl) =>
+            tbl.barcode.equals(barcode) &
+            tbl.createdAt.isBiggerThanValue(cutoffDate),
+      );
     return query.getSingleOrNull();
   }
 
@@ -58,8 +61,8 @@ class CachedProductDao extends DatabaseAccessor<AppDatabase>
   /// Default maxAgeDays is 30 days.
   Future<int> cleanupStaleProducts({int maxAgeDays = 30}) async {
     final cutoffDate = DateTime.now().subtract(Duration(days: maxAgeDays));
-    return (delete(cachedProducts)
-          ..where((tbl) => tbl.createdAt.isSmallerThanValue(cutoffDate)))
-        .go();
+    return (delete(
+      cachedProducts,
+    )..where((tbl) => tbl.createdAt.isSmallerThanValue(cutoffDate))).go();
   }
 }

@@ -1,0 +1,8 @@
+- generic [ref=e3]:
+  - button "Enable accessibility" [ref=e4]
+  - generic [ref=e7]:
+    - generic:
+      - generic:
+        - textbox [active] [ref=e8]
+        - textbox
+        - button "Submit"

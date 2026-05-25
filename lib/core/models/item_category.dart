@@ -96,7 +96,7 @@ enum ItemCategory {
   }
 
   static ItemCategory fromDb(String value) => ItemCategory.values.firstWhere(
-        (c) => c.dbValue == value,
-        orElse: () => ItemCategory.other,
-      );
+    (c) => c.dbValue == value,
+    orElse: () => ItemCategory.other,
+  );
 }

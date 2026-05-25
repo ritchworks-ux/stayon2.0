@@ -80,8 +80,8 @@ class OpenFoodFactsService {
   OpenFoodFactsService({
     required CachedProductDao cachedProductDao,
     http.Client? httpClient,
-  })  : _cachedProductDao = cachedProductDao,
-        _httpClient = httpClient ?? http.Client();
+  }) : _cachedProductDao = cachedProductDao,
+       _httpClient = httpClient ?? http.Client();
 
   static const _baseUrl = 'https://world.openfoodfacts.org/api/v3/product';
   static const _maxRetries = 3;
@@ -123,7 +123,8 @@ class OpenFoodFactsService {
     final cachedProduct = await _cachedProductDao.getCachedProduct(barcode);
     if (cachedProduct != null) {
       try {
-        final data = jsonDecode(cachedProduct.productData) as Map<String, dynamic>;
+        final data =
+            jsonDecode(cachedProduct.productData) as Map<String, dynamic>;
         return ExtractionResult(
           type: 'barcode',
           data: data,
@@ -163,15 +164,17 @@ class OpenFoodFactsService {
     final uri = Uri.parse('$_baseUrl/$barcode.json');
 
     try {
-      final response = await _httpClient.get(uri).timeout(
-        const Duration(seconds: 10),
-        onTimeout: () {
-          throw BarcodeException(
-            code: 'network_error',
-            message: 'Request timeout after 10 seconds',
+      final response = await _httpClient
+          .get(uri)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              throw BarcodeException(
+                code: 'network_error',
+                message: 'Request timeout after 10 seconds',
+              );
+            },
           );
-        },
-      );
 
       // Handle 404: not found.
       if (response.statusCode == 404) {
@@ -255,9 +258,10 @@ class OpenFoodFactsService {
     }
 
     // All retries exhausted.
-    throw lastError ?? BarcodeException(
-      code: 'server_error',
-      message: 'All retry attempts exhausted',
-    );
+    throw lastError ??
+        BarcodeException(
+          code: 'server_error',
+          message: 'All retry attempts exhausted',
+        );
   }
 }

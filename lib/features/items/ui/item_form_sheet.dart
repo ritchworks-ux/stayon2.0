@@ -248,17 +248,17 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
           } on QuotaException catch (e) {
             // Show quota error to user
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(e.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(e.message)));
             }
             return;
           } on AttachmentException catch (e) {
             // Show generic attachment error
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(e.message)),
-              );
+              ScaffoldMessenger.of(
+                context,
+              ).showSnackBar(SnackBar(content: Text(e.message)));
             }
             return;
           }

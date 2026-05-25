@@ -26,11 +26,14 @@ class AppShell extends ConsumerWidget {
     // Derive overdue count from the live items list.
     // Falls back to 0 while loading or on error — the badge simply won't
     // appear until data is available, which is the right UX.
-    final overdueCount = ref.watch(itemsProvider).whenOrNull(
-          data: (items) => items
-              .where((i) => bucketFor(i.targetDate) == DateBucket.overdue)
-              .length,
-        ) ??
+    final overdueCount =
+        ref
+            .watch(itemsProvider)
+            .whenOrNull(
+              data: (items) => items
+                  .where((i) => bucketFor(i.targetDate) == DateBucket.overdue)
+                  .length,
+            ) ??
         0;
 
     final destinations = [

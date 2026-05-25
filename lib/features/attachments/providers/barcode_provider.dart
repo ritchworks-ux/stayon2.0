@@ -7,7 +7,9 @@ import 'package:stayon/core/providers/database_providers.dart';
 /// This service handles barcode lookups with caching and retry logic.
 /// The service is initialized with the real CachedProductDao from the database provider.
 /// Override in tests with a mock implementation.
-final openFoodFactsServiceProvider = FutureProvider<OpenFoodFactsService>((ref) async {
+final openFoodFactsServiceProvider = FutureProvider<OpenFoodFactsService>((
+  ref,
+) async {
   final cachedProductDao = await ref.watch(cachedProductDaoProvider.future);
   return OpenFoodFactsService(cachedProductDao: cachedProductDao);
 });

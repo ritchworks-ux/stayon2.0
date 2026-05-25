@@ -4,6 +4,11 @@ import 'colors.dart';
 import 'typography.dart';
 
 abstract final class AppTheme {
+  // Accent color that adapts to brightness
+  static Color accentColor(Brightness brightness) {
+    return brightness == Brightness.dark ? AppColors.green : AppColors.coral;
+  }
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: AppColors.green,

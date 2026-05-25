@@ -14,17 +14,17 @@ import 'package:stayon/features/items/data/item_repository.dart';
 class _MockRepo extends Mock implements ItemRepository {}
 
 Item _item({required String id, required DateTime targetDate}) => Item(
-      id: id,
-      ownerId: 'o',
-      name: 'Test $id',
-      category: ItemCategory.other,
-      dateType: ItemDateType.expires,
-      targetDate: targetDate,
-      currencyCode: 'PHP',
-      status: ItemStatus.active,
-      createdAt: DateTime.utc(2026, 1, 1),
-      updatedAt: DateTime.utc(2026, 1, 1),
-    );
+  id: id,
+  ownerId: 'o',
+  name: 'Test $id',
+  category: ItemCategory.other,
+  dateType: ItemDateType.expires,
+  targetDate: targetDate,
+  currencyCode: 'PHP',
+  status: ItemStatus.active,
+  createdAt: DateTime.utc(2026, 1, 1),
+  updatedAt: DateTime.utc(2026, 1, 1),
+);
 
 /// Builds a minimal router that exercises AppShell via StatefulShellRoute.
 /// The shell branches are stubs — only the NavigationBar is under test.
@@ -36,30 +36,38 @@ Widget _wrapWithRouter({required _MockRepo repo, required List<Item> items}) {
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => AppShell(navigationShell: shell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/',
-              builder: (_, _) => const Scaffold(body: SizedBox()),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/calendar',
-              builder: (_, _) => const Scaffold(body: SizedBox()),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/alerts',
-              builder: (_, _) => const Scaffold(body: SizedBox()),
-            ),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(
-              path: '/family',
-              builder: (_, _) => const Scaffold(body: SizedBox()),
-            ),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/',
+                builder: (_, _) => const Scaffold(body: SizedBox()),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/calendar',
+                builder: (_, _) => const Scaffold(body: SizedBox()),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/alerts',
+                builder: (_, _) => const Scaffold(body: SizedBox()),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/family',
+                builder: (_, _) => const Scaffold(body: SizedBox()),
+              ),
+            ],
+          ),
         ],
       ),
     ],

@@ -7,8 +7,7 @@ import 'package:stayon/core/models/extraction_result.dart';
 import 'package:stayon/features/attachments/services/open_food_facts_service.dart';
 import 'package:stayon/features/attachments/ui/barcode_scanner_sheet.dart';
 
-class _MockOpenFoodFactsService extends Mock
-    implements OpenFoodFactsService {}
+class _MockOpenFoodFactsService extends Mock implements OpenFoodFactsService {}
 
 Widget _wrap({
   required OpenFoodFactsService service,
@@ -20,11 +19,7 @@ Widget _wrap({
     ],
     child: MaterialApp(
       theme: ThemeData(splashFactory: NoSplash.splashFactory),
-      home: Scaffold(
-        body: BarcodeScannerSheet(
-          onResult: onResult ?? (_) {},
-        ),
-      ),
+      home: Scaffold(body: BarcodeScannerSheet(onResult: onResult ?? (_) {})),
     ),
   );
 }
@@ -48,21 +43,20 @@ void main() {
   });
 
   group('BarcodeScannerSheet', () {
-    testWidgets(
-      'Test 1: Widget builds with permission request',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 1: Widget builds with permission request', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(_wrap(service: service));
-        await _settle(tester);
+      await tester.pumpWidget(_wrap(service: service));
+      await _settle(tester);
 
-        // Widget should build without crashing
-        expect(find.byType(BarcodeScannerSheet), findsOneWidget);
-        // Header should be present
-        expect(find.text('Scan barcode'), findsWidgets);
-      },
-    );
+      // Widget should build without crashing
+      expect(find.byType(BarcodeScannerSheet), findsOneWidget);
+      // Header should be present
+      expect(find.text('Scan barcode'), findsWidgets);
+    });
 
     testWidgets(
       'Test 2: Close button dismisses the sheet without invoking callback',
@@ -72,10 +66,7 @@ void main() {
 
         bool resultCalled = false;
         await tester.pumpWidget(
-          _wrap(
-            service: service,
-            onResult: (_) => resultCalled = true,
-          ),
+          _wrap(service: service, onResult: (_) => resultCalled = true),
         );
         await _settle(tester);
 
@@ -88,119 +79,96 @@ void main() {
       },
     );
 
-    testWidgets(
-      'Test 3: Renders header with title and close button',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 3: Renders header with title and close button', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(_wrap(service: service));
-        await _settle(tester);
+      await tester.pumpWidget(_wrap(service: service));
+      await _settle(tester);
 
-        // Verify header elements
-        expect(find.text('Scan barcode'), findsWidgets);
-        expect(find.byIcon(Icons.close), findsWidgets);
-      },
-    );
+      // Verify header elements
+      expect(find.text('Scan barcode'), findsWidgets);
+      expect(find.byIcon(Icons.close), findsWidgets);
+    });
 
-    testWidgets(
-      'Test 4: Widget structure is correct',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 4: Widget structure is correct', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(_wrap(service: service));
-        await _settle(tester);
+      await tester.pumpWidget(_wrap(service: service));
+      await _settle(tester);
 
-        // Verify main widget structure
-        expect(find.byType(BarcodeScannerSheet), findsOneWidget);
-        expect(find.byType(DraggableScrollableSheet), findsOneWidget);
-        expect(find.byType(Container), findsWidgets);
-      },
-    );
+      // Verify main widget structure
+      expect(find.byType(BarcodeScannerSheet), findsOneWidget);
+      expect(find.byType(DraggableScrollableSheet), findsOneWidget);
+      expect(find.byType(Container), findsWidgets);
+    });
 
-    testWidgets(
-      'Test 5: Callback receives extraction result when confirmed',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 5: Callback receives extraction result when confirmed', (
+      tester,
+    ) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        ExtractionResult? capturedResult;
-        await tester.pumpWidget(
-          _wrap(
-            service: service,
-            onResult: (result) => capturedResult = result,
-          ),
-        );
-        await _settle(tester);
+      ExtractionResult? capturedResult;
+      await tester.pumpWidget(
+        _wrap(service: service, onResult: (result) => capturedResult = result),
+      );
+      await _settle(tester);
 
-        // The widget is built; in real usage, onResult would be called
-        // when a barcode is scanned and API lookup succeeds.
-        expect(find.byType(BarcodeScannerSheet), findsOneWidget);
-      },
-    );
+      // The widget is built; in real usage, onResult would be called
+      // when a barcode is scanned and API lookup succeeds.
+      expect(find.byType(BarcodeScannerSheet), findsOneWidget);
+    });
 
-    testWidgets(
-      'Test 6: Manual entry callback returns null',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 6: Manual entry callback returns null', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        ExtractionResult? capturedResult;
-        await tester.pumpWidget(
-          _wrap(
-            service: service,
-            onResult: (result) => capturedResult = result,
-          ),
-        );
-        await _settle(tester);
+      ExtractionResult? capturedResult;
+      await tester.pumpWidget(
+        _wrap(service: service, onResult: (result) => capturedResult = result),
+      );
+      await _settle(tester);
 
-        // In production, manual entry flow would set capturedResult to null
-        expect(find.byType(BarcodeScannerSheet), findsOneWidget);
-      },
-    );
+      // In production, manual entry flow would set capturedResult to null
+      expect(find.byType(BarcodeScannerSheet), findsOneWidget);
+    });
 
-    testWidgets(
-      'Test 7: Rescan button functionality',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 7: Rescan button functionality', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(_wrap(service: service));
-        await _settle(tester);
+      await tester.pumpWidget(_wrap(service: service));
+      await _settle(tester);
 
-        // Widget structure is correct for rescan functionality
-        expect(find.byType(BarcodeScannerSheet), findsOneWidget);
-      },
-    );
+      // Widget structure is correct for rescan functionality
+      expect(find.byType(BarcodeScannerSheet), findsOneWidget);
+    });
 
-    testWidgets(
-      'Test 8: State transitions and UI updates',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 8: State transitions and UI updates', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(_wrap(service: service));
-        await _settle(tester);
+      await tester.pumpWidget(_wrap(service: service));
+      await _settle(tester);
 
-        // Verify initial state renders
-        expect(find.byType(BarcodeScannerSheet), findsOneWidget);
-      },
-    );
+      // Verify initial state renders
+      expect(find.byType(BarcodeScannerSheet), findsOneWidget);
+    });
 
-    testWidgets(
-      'Test 9: Draggable bottom sheet properties',
-      (tester) async {
-        await tester.binding.setSurfaceSize(const Size(400, 800));
-        addTearDown(() => tester.binding.setSurfaceSize(null));
+    testWidgets('Test 9: Draggable bottom sheet properties', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(400, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
 
-        await tester.pumpWidget(_wrap(service: service));
-        await _settle(tester);
+      await tester.pumpWidget(_wrap(service: service));
+      await _settle(tester);
 
-        // Verify DraggableScrollableSheet is present with correct properties
-        final sheet = find.byType(DraggableScrollableSheet);
-        expect(sheet, findsOneWidget);
-      },
-    );
+      // Verify DraggableScrollableSheet is present with correct properties
+      final sheet = find.byType(DraggableScrollableSheet);
+      expect(sheet, findsOneWidget);
+    });
   });
 }

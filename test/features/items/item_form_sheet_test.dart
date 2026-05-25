@@ -166,47 +166,41 @@ void main() {
     // ItemFormSheet accepts a @visibleForTesting testInitialDate param so
     // tests can drive the warning without opening the picker.
 
-    testWidgets(
-      'shows warning in Add mode when initial date is in the past',
-      (tester) async {
-        final pastDate = DateTime.now().subtract(const Duration(days: 5));
-        await _setTallSurface(tester);
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [itemRepositoryProvider.overrideWithValue(repo)],
-            child: MaterialApp(
-              theme: ThemeData(splashFactory: NoSplash.splashFactory),
-              home: Scaffold(
-                body: ItemFormSheet(testInitialDate: pastDate),
-              ),
-            ),
+    testWidgets('shows warning in Add mode when initial date is in the past', (
+      tester,
+    ) async {
+      final pastDate = DateTime.now().subtract(const Duration(days: 5));
+      await _setTallSurface(tester);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [itemRepositoryProvider.overrideWithValue(repo)],
+          child: MaterialApp(
+            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            home: Scaffold(body: ItemFormSheet(testInitialDate: pastDate)),
           ),
-        );
-        await _settle(tester);
-        expect(find.byKey(const Key('past_date_warning')), findsOneWidget);
-      },
-    );
+        ),
+      );
+      await _settle(tester);
+      expect(find.byKey(const Key('past_date_warning')), findsOneWidget);
+    });
 
-    testWidgets(
-      'no warning in Add mode when date is today or future',
-      (tester) async {
-        final futureDate = DateTime.now().add(const Duration(days: 10));
-        await _setTallSurface(tester);
-        await tester.pumpWidget(
-          ProviderScope(
-            overrides: [itemRepositoryProvider.overrideWithValue(repo)],
-            child: MaterialApp(
-              theme: ThemeData(splashFactory: NoSplash.splashFactory),
-              home: Scaffold(
-                body: ItemFormSheet(testInitialDate: futureDate),
-              ),
-            ),
+    testWidgets('no warning in Add mode when date is today or future', (
+      tester,
+    ) async {
+      final futureDate = DateTime.now().add(const Duration(days: 10));
+      await _setTallSurface(tester);
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [itemRepositoryProvider.overrideWithValue(repo)],
+          child: MaterialApp(
+            theme: ThemeData(splashFactory: NoSplash.splashFactory),
+            home: Scaffold(body: ItemFormSheet(testInitialDate: futureDate)),
           ),
-        );
-        await _settle(tester);
-        expect(find.byKey(const Key('past_date_warning')), findsNothing);
-      },
-    );
+        ),
+      );
+      await _settle(tester);
+      expect(find.byKey(const Key('past_date_warning')), findsNothing);
+    });
 
     testWidgets(
       'no warning in Edit mode even when item has a past target date',
@@ -369,15 +363,17 @@ void main() {
       await _settle(tester);
 
       // Verify repository.add was called
-      verify(() => repo.add(
-        name: captureAny(named: 'name'),
-        category: any(named: 'category'),
-        dateType: any(named: 'dateType'),
-        targetDate: any(named: 'targetDate'),
-        notes: any(named: 'notes'),
-        assigneeLabel: any(named: 'assigneeLabel'),
-        amountMinor: any(named: 'amountMinor'),
-      )).called(1);
+      verify(
+        () => repo.add(
+          name: captureAny(named: 'name'),
+          category: any(named: 'category'),
+          dateType: any(named: 'dateType'),
+          targetDate: any(named: 'targetDate'),
+          notes: any(named: 'notes'),
+          assigneeLabel: any(named: 'assigneeLabel'),
+          amountMinor: any(named: 'amountMinor'),
+        ),
+      ).called(1);
     });
   });
 }

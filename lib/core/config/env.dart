@@ -5,6 +5,7 @@ abstract final class Env {
   static const supabasePublishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
   );
+  static const anthropicApiKey = String.fromEnvironment('ANTHROPIC_API_KEY');
 
   /// Throws [StateError] if any required value is empty.
   static void assertValid() {
@@ -17,6 +18,12 @@ abstract final class Env {
     if (supabasePublishableKey.isEmpty) {
       throw StateError(
         'SUPABASE_PUBLISHABLE_KEY is not set. '
+        'Run with --dart-define-from-file=.env.local',
+      );
+    }
+    if (anthropicApiKey.isEmpty) {
+      throw StateError(
+        'ANTHROPIC_API_KEY is not set. '
         'Run with --dart-define-from-file=.env.local',
       );
     }
