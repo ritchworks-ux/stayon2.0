@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import '../../../core/models/attachment.dart';
+import '../../../core/models/storage_quota.dart';
 
 /// Repository contract for attachment persistence.
 ///
@@ -56,6 +57,14 @@ abstract interface class AttachmentRepository {
   ///
   /// Throws [AttachmentException] on failure.
   Future<Attachment> update(String attachmentId, Map<String, dynamic> patch);
+
+  /// Retrieves the storage quota for the current authenticated user.
+  ///
+  /// Returns a [StorageQuota] object with usage metrics and tier information.
+  /// Useful for quota display in settings or upload flows.
+  ///
+  /// Throws [AttachmentException] on failure or if not signed in.
+  Future<StorageQuota> getStorageQuota();
 }
 
 /// Thrown by [AttachmentRepository] for any user-actionable failure.

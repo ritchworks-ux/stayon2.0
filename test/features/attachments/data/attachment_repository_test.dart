@@ -126,8 +126,8 @@ void main() {
   });
 
   group('add', () {
-    test('inserts attachment with owner_id from auth.uid()', () async {
-      final att = _attachment(id: 'new-att-1');
+    test('returns attachment with owner_id and local storage path', () async {
+      final att = _attachment(id: 'new-att-1', storagePath: 'local://test.jpg');
       when(() => ds.getQuotaForOwner(_ownerId)).thenAnswer(
         (_) async => {
           'owner_id': _ownerId,
@@ -139,9 +139,6 @@ void main() {
         },
       );
       when(
-        () => ds.insertAttachment(any()),
-      ).thenAnswer((_) async => _attachmentRow(id: 'new-att-1'));
-      when(
         () => attachmentDao.insertAttachment(any()),
       ).thenAnswer((_) async {});
 
@@ -149,13 +146,13 @@ void main() {
 
       expect(result.id, 'new-att-1');
       expect(result.ownerId, _ownerId);
+      expect(result.storagePath, 'local://test.jpg');
+      expect(result.storageTier, 'local');
 
-      // Verify DataSource was called with correct payload
-      final capturedPayload =
-          verify(() => ds.insertAttachment(captureAny())).captured.single
-              as Map<String, dynamic>;
-      expect(capturedPayload['owner_id'], _ownerId);
-      expect(capturedPayload['item_id'], _itemId);
+      // Verify DataSource was NOT called (free tier local-only)
+      verifyNever(() => ds.insertAttachment(any()));
+      // Verify Drift was called
+      verify(() => attachmentDao.insertAttachment(any())).called(1);
     });
 
     test('syncs to Drift cache after Supabase insert succeeds', () async {
@@ -259,6 +256,56 @@ void main() {
       expect(result.ownerId, _ownerId);
     });
 
+    test('free tier insert skips Supabase, saves to Drift only', () async {
+      when(() => ds.getQuotaForOwner(_ownerId)).thenAnswer(
+        (_) async => {
+          'owner_id': _ownerId,
+          'tier': 'free',
+          'total_bytes_used': 0,
+          'quota_limit_bytes': 52428800,
+          'attachment_count': 0,
+          'attachment_limit': 10,
+        },
+      );
+      when(
+        () => attachmentDao.insertAttachment(any()),
+      ).thenAnswer((_) async {});
+
+      final att = _attachment(id: 'new-att-1', storagePath: 'local://test.jpg');
+      await repo.add(att, Uint8List.fromList([1, 2, 3]));
+
+      // Verify Supabase insert was NOT called for free tier
+      verifyNever(() => ds.insertAttachment(any()));
+      // Verify Drift insert WAS called
+      verify(() => attachmentDao.insertAttachment(any())).called(1);
+    });
+
+    test('premium tier insert saves to both Supabase and Drift', () async {
+      when(() => ds.getQuotaForOwner(_ownerId)).thenAnswer(
+        (_) async => {
+          'owner_id': _ownerId,
+          'tier': 'premium',
+          'total_bytes_used': 0,
+          'quota_limit_bytes': 5368709120,
+          'attachment_count': 0,
+          'attachment_limit': 1000,
+        },
+      );
+      when(
+        () => ds.insertAttachment(any()),
+      ).thenAnswer((_) async => _attachmentRow(id: 'new-att-1'));
+      when(
+        () => attachmentDao.insertAttachment(any()),
+      ).thenAnswer((_) async {});
+
+      final att = _attachment(id: 'new-att-1');
+      await repo.add(att, Uint8List.fromList([1, 2, 3]));
+
+      // Verify both Supabase and Drift inserts were called
+      verify(() => ds.insertAttachment(any())).called(1);
+      verify(() => attachmentDao.insertAttachment(any())).called(1);
+    });
+
     test('throws not_signed_in if no current user', () async {
       when(() => auth.currentUser).thenReturn(null);
 
@@ -278,11 +325,11 @@ void main() {
       when(() => ds.getQuotaForOwner(_ownerId)).thenAnswer(
         (_) async => {
           'owner_id': _ownerId,
-          'tier': 'free',
+          'tier': 'premium',
           'total_bytes_used': 10000000,
-          'quota_limit_bytes': 52428800,
+          'quota_limit_bytes': 5368709120,
           'attachment_count': 5,
-          'attachment_limit': 10,
+          'attachment_limit': 1000,
         },
       );
       when(() => ds.insertAttachment(any())).thenThrow(
