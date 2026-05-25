@@ -13,6 +13,7 @@ import '../../../core/models/item_date_type.dart';
 import '../../../core/providers/database_providers.dart';
 import '../../attachments/data/attachment_repository.dart';
 import '../../attachments/ui/barcode_scanner_sheet.dart';
+import '../../attachments/ui/receipt_photo_sheet.dart';
 import '../controllers/item_form_controller.dart';
 import '../data/item_repository.dart';
 import 'widgets/amount_field.dart';
@@ -119,6 +120,44 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
       builder: (context) =>
           BarcodeScannerSheet(onResult: _onBarcodeScannerResult),
     );
+  }
+
+  /// Open the receipt photo sheet.
+  void _showReceiptPhotoSheet() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) =>
+          ReceiptPhotoSheet(onPhotoAttached: _onReceiptPhotoAttached),
+    );
+  }
+
+  /// Handle receipt photo attachment and trigger extraction review.
+  ///
+  /// - Shows loading spinner while Claude Vision API extracts data
+  /// - On success, shows ExtractionReviewSheet for user review
+  /// - On failure, shows error message
+  void _onReceiptPhotoAttached(
+    DateTime? dateTime,
+    double? amount,
+    List<int> imageBytes,
+  ) {
+    // Pre-fill form fields if extraction returned data
+    if (dateTime != null && mounted) {
+      setState(() {
+        _targetDate = dateTime;
+      });
+    }
+
+    if (amount != null && mounted) {
+      setState(() {
+        _amountMinor = (amount * 100).toInt();
+      });
+    }
+
+    // Note: imageBytes are used by ReceiptPhotoSheet to compress and store
+    // the receipt image. Future integration (T6+) will trigger Claude Vision
+    // extraction and ExtractionReviewSheet for user confirmation.
   }
 
   /// Handle barcode scanner result and pre-fill form fields.
@@ -329,10 +368,19 @@ class _ItemFormSheetState extends ConsumerState<ItemFormSheet> {
                         style: t.titleLarge,
                       ),
                       if (!_isEdit)
-                        IconButton(
-                          icon: const Icon(Icons.barcode_reader),
-                          onPressed: _showBarcodeScannerSheet,
-                          tooltip: 'Scan barcode for quick entry',
+                        Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.receipt_long_outlined),
+                              onPressed: _showReceiptPhotoSheet,
+                              tooltip: 'Add receipt for extraction',
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.barcode_reader),
+                              onPressed: _showBarcodeScannerSheet,
+                              tooltip: 'Scan barcode for quick entry',
+                            ),
+                          ],
                         ),
                     ],
                   ),
